@@ -1,0 +1,27 @@
+# While loop can be translated to if-else conditions
+C Code:
+    while(<cond>){
+	    <while_body>
+    }
+
+MIPS Code:
+L1: if(<cond>){
+	<while_body>
+	goto L1;
+    }
+
+
+C Code: 
+    while(i<j){
+	    i++;
+    }
+
+MIPS Code:
+# assuming $s1 = i and $s2 = j
+L1: bge $s1, $s2, LDONE
+    addi $s1, $s1, 1
+    j L1
+DONE:
+
+
+

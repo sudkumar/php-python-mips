@@ -1,0 +1,13 @@
+1, =, a, 2
+2, +, b, a, 2
+3, +, a, a, 2
+4, =, c, 2
+5, ifgoto, blt, a, c, 3
+6, =, a, 3
+7, goto, 5
+8, =, d, 6
+9, call, foo
+10, return
+11, label, foo
+12, print, x
+13, return

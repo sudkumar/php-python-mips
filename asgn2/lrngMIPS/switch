@@ -1,0 +1,35 @@
+# Conditional switch statement
+C Code:
+    switch(i){
+	    case 1: i++;
+	    case 2: i += 2;
+		break;
+	    case 3: i += 3;
+	    default: i = 2;
+    }
+
+
+MIPS Code:
+# assuming $s1 = i
+# in switch statements, we seperate conditions from condition body
+# we create a dummy variable to capture the values of first case statement i.e. 1
+    addi $t1, $zero, 1	# $t1 = 1
+    bne $s1, $t1, LC2_COND	# if conditions evaluates to true i.e. case failed go to next case 
+    # condition is true, so evaluate the body of this case
+    j LC1_BODY
+LC2_COND: addi $t1, $zero, 2
+    bne $s1, $t1, LC3_COND	# go to next case if this case fails
+    # case passed, go into the it's body
+    j LC2_BODY
+LC3_COND: addi $t1, $zero, 3
+    bne $s1, $t1, LDEFAULT_BODY 	# this is the last case and if this fails, go to default or exit
+    # case is passed, go into it's body
+    j LC3_BODY
+
+# body for cases. cases without break will continue to next case body till it founds a break
+LC1_BODY: addi $s1, $s1, 1
+LC2_BODY: addi $s1, $s1, 2
+	j LEXIT
+LC3_BODY: addi $s1, $s1, 3
+LDEFAULT_BODY:  addi $s1, $zero, 2
+LEXIT:

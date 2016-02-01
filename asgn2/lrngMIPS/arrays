@@ -1,0 +1,20 @@
+# arrays in mips are simply accessed with the address
+
+C Code:
+int arr[10] = {1,2,-2,3,5,1,12,12,3,2}	
+
+MIPS Code:
+    .text
+    .globl main
+main: la $s0, size	# load the address of the label
+    lw $s1, 0($s0)	# get the value from address $s0
+    la $s3, arr		# load the base address of the array
+    lw $t1, 0($s3)	# load the value at address $s3 i.e. first element
+    addi $s3, $s3, 4	# increment the array pointer
+    lw $t1, 0($s3)	# load the value at address $s3
+    lw $t2, 4($s3)	# load the values at address $s3 + 4 i.e. next value in array
+
+    # initialize data
+    .data
+size: .word 10
+arr:  .word 1, 2, -2, 3, 5, 1, 12, 12, 3, 2

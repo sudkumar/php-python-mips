@@ -1,0 +1,21 @@
+# For loop can be translated to if
+C Code:
+    for( <init>; <cond>; <update>){
+	    <for-body>
+    }
+
+# The above code is equivalent to while loop:
+    <init>;
+    while(<cond>){
+	    <for-body>
+	    <update>
+    }
+
+# and the above code is equivalent to if block
+MIPS Code:
+	<init>
+    L1: !<cond>, DONE
+    	<for-body>
+    	<update>
+    	j L1
+    DONE:

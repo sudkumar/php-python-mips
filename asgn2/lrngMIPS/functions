@@ -1,0 +1,104 @@
+# Here we deal with procedures of two kinds
+- Leaf procedure: This type of procedure does not make any subroutine calls. That is, there is no jal call.
+- Non-leaf procedure: This type of procedures does make call to another procedure or calls to it self.
+
+We put procedures into two classes because if there implementation. As in non-leaf procedures, we make call to another procedures, so the return address of the preceding procedures has to be stored otherwise it will be overwritten when we make another function call.
+
+So non-leaf caller procedure must store it's return address before it calls to a procedure. i.e.
+
+    addi $sp, $sp, -4		# make room on stack
+    sw $ra, 0($sp)		# save the return address
+    # here we make a call to another procedure
+    # other operations goes here
+    # now before we return, we have to restore the return address
+    lw $ra, 0($sp)		# restore the return address back into $ra
+    addi $sp, $sp, 4		# also pop it from stack
+
+
+Other problem with non-leaf procedures is that, when we can a procedure from a non-leaf procedure, some registers may by overwritten by the calle which are later being used in caller(non-leaf procedure). So it's always a good practice that before making a call, we should backup our registered as necessary.
+
+
+# General MIPS Code for functions:
+## For leaf procedures
+Label_Leaf: save registered change by callee ( by this procedure)
+    run the code for the current procedure
+    put the return value in $v0
+    restore saved registers
+    call return by jr $ra
+
+## For non leaf procedures
+The "callee" should
+    save arguments registers (if used)
+    save return address ($ra)
+    save callee used registeres (from $s0-$s7 set)
+    create stack for local arrays and structures (if any)
+    restore registers, saves at begining, before return (jr $ra)
+The "caller" should
+save and restore callers life registers (from $to-$t9) around function call (jal label)
+
+
+Now let's take an example of factorial functions (non-leaf procedure)
+C Code:
+    int fact(int n){
+	    if(n<1)
+		    return 1;
+	    else
+		    return (n*fact(n-1));
+    }
+
+
+MIPS Code:
+L_FACT:
+    li $t0, 1			# check for the base case
+    bgt $a0, $t0, L_RECURSE	
+    li $v0, 1			# n < 1, so return 1
+    jr $ra
+
+L_RECURSE:
+    # make room and store return address and value or parameter n
+    addi $sp, $sp, -8
+    sw $ra, 4($sp)
+    sw $a0, 0($sp)
+
+    # cal fact with value of n-1 and link
+    addi $a0, $a0, -1
+    jal L_FACT
+
+    # after return from jal, restore the n, compute and return n*fact(n-1)
+    lw $t1, 0($sp)
+    mul $v0, $v0, $t1
+    lw $ra, 4($sp)
+
+    # restore the stack pointer and return 
+    addi $sp, $sp, 8
+    jr $ra
+
+
+
+## Now lets look at an example of leaf procedure
+C Code:
+    void strcpy(char x[], char y[]){
+	    int i;
+	    i = 0;
+	    while((x[i]=y[i]) != 0) // copy and test byte
+		    i++;
+    }
+
+
+MIPS Code:
+# This is a leaf procedure, so no saving of args and return address is required
+# $a0 = x and $a1 = y
+L_STRCPY:
+    addi $sp, $sp, -4
+    sw $s0, 0($sp)			# store $s0 if it has some content 
+    add $s0, $zero, $zero		# init i = 0
+L_LOOP:
+    add $t1, $a1, $s0			# address of y[i]
+    lb $t2, 0($t1)				# load byte y[i] in $t2
+    add $t3, $a0, $s0			# similar address for x[i]
+    sb $t2, 0($t3)				# store byte y[i] into x[i]
+    addi $s0, $s0, 1			# i++
+    bne $t2, $zero, L1			# if y[i] != 0 goto L1
+    lw $s0, 0($sp)				# restore old $s0
+    addi $sp, $sp, 4			# restore the stack pointer
+    jr $ra

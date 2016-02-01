@@ -1,0 +1,11 @@
+> Remember that arithmatic operands are registers, not memory
+> Store word operation has no destination(register) operand
+
+C Code:
+    A[8] = h + A[8]
+
+MIPS Code:
+    # let $s3 stores the base address of the A
+    lw $t0, 32($s3)  # get the value at address A+8 = 4*8(base_address) and put it in a tmp variable $t0
+    add $t0, $s2, $t0  # $s2 contains the value of h
+    sw $t0, 32($s3)

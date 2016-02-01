@@ -1,0 +1,71 @@
+# Simple if statements
+C Code:
+    if(i==j)
+	    i++;
+    j--;
+
+MIPS Code:
+# conditions branch not equal can be used
+# assuming $s1 = i and $s2 = j
+    	bne $s1, $s2, L1	# if $s1 != $s2: goto L1
+    	addi $s1, $s1, 1	# inside the if block
+    L1: addi $s2, $s2, -1	# label outside the if block
+
+
+# Simple if-else statement
+C Code:
+    if(i==j)
+	    i++;
+    else
+	    j--;
+    j += i;
+
+MIPS Code:
+# assuming $s1 = i, $s2 = j
+    	bne $s1, $s2, LELSE	# if not equal, goto label LELSE
+    	addi $s1, $s1, 1
+    	# now we are done with if block, skip the else block and jump at end
+    	j LNEXT
+    LELSE: addi $s2, $s2, -1
+    LNEXT: add $s2, $s2, $s1
+
+
+# if-else with compound 'and' conditions
+C Code:
+    if(i==j&&i==k)
+	    i++;
+    else
+	    j--;
+    i = j + k;
+
+MIPS Code
+# assuming $s1 = i, $s2 = j, $s3 = k
+    	bne $s1, $s2, LELSE	# if first condition is true, goto label LELSE (short cicruiting)
+    	bne $s1, $s3, LELSE	# if the second condition is true, goto label LELSE
+    	# if both are correct, continue
+    	addi $s1, $s1, 1
+    	# now we are done, skip the else and jump to LNEXT
+    	j LNEXT
+    LELSE: addi $s2, $s2, -1
+    LNEXT: $add $s1, $s2, $s3
+
+# if-else with compound 'or' conditions
+C Code:
+    if(i==j||i==k)
+	    i++;
+    else
+	    j++;
+    i = j + 1;
+
+MIPS Code:
+# assuming $s1=i, $s2=j...
+    	beq $s1, $s2, LIF	# if conditions is true, go inside the if block (short circiuting)
+    	bne $s1, $s2, LELSE	# if condition is true, jump to else statement
+    LIF: addi $s1, $s1, 1
+    	# we are done with the if block, skip the else and jump to label next
+    	j LNEXT 
+    LELSE: addi $s2, $s2, -1
+    LNEXT: add $s1, $s3, $s3 
+
+
+

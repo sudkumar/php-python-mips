@@ -1,0 +1,52 @@
+Category	Instruction	Example			Meaning				Comments
+Arithmetic	add		add $s1, $s2, $s3	$s1 = $s2 + $s3			Three operands; data in registers
+		subtract	sub $s1, $s2, $s3	$s1 = $s2 - $s3			Three operands; data in registers
+		add immediate	addi $s1, $s2, 100	$s1 = $s2 + 100			Used to add constants
+		add unsigned	addu $s1, $s2, $s3	...
+		add immediate unsigned	addiu $s1, $s2, 100
+		multiply	mult $s1, $s2		LO = (($s1*$s2) << 32) >> 32;	LO and HI contains 32 lower and 32 higher bits of result
+							HI = ($s1*$s2) >> 32;
+		divide		div $s1, $s2		LO = $s1/$s2, HO = $s1%$s2
+
+Data transfer	load word	lw $s1, 100($s2)	$s1 = load mem[$s2+100]		Load word from memory with a locatoin
+		store word	sw $s1, 100($s2)	save mem[$s2+100] = $s1		Store word at a momory location
+		load byte	lb...
+		store byte	sb...
+		load upper immediate	lui $s1, 100	$s1 = 100*2^16 or $s1 = 100 << 16	Loads contants in upper 16 bits
+		move from high	mfhi $s1		$s1 = HI			load the value of content of HI
+		move from low	mflo $s1		$s1 = LO			load the value of content of LO
+
+Conditional Branch	Branch on equal		beq $s1, $s2, 25	if($s1 == $s2) go to label 25
+		branch on not equal 		bne $s1, $s2, 25	if($s1 != $s2) go to label 25
+		set on less than		slt $s1, $s2, $s3	if($s2 < $s3) $s1 = 1; else $s1 = 0;	Compare less than; for beq, bne
+		set less than immediate		slti $s1, $s2, 100
+
+Unconditional Jump	jump			j 2500			goto label 2500		Jump to target address
+			jump register		jr $ra			goto $ra		For switch, procedure return
+			jump and link		jal 2500		$ra = PC+4; goto 2500	For procedure call
+
+
+
+
+
+# MIPS assemble also provides some pseudo to help us by taking care of some instructions itself
+
+Name					pseudo instruction	meaning
+move					move $s1, $s2		$s1=$s2
+clear					clear $s1		$s1=0
+not					not $s1, $s2		$s1=~$s2
+load addres				la $s1, labelAddr	$s1=label address
+load immediate				li $s1, IMMED[31:0]	$s1=32 bits immediate value
+branch unconditionally			b Label			PC=Label
+branch and link				bal Label		$ra=PC+8;PC=Label	
+branch if greater than			bgt $s1, $s2, Label	...	
+branch if less than			blt $s1, $s2, Label
+branch if greater than or equal		bge $s1, $s2, Label
+branch if less than or equal		ble $s1, $s2, Label 
+branch if less than or equal ro zero	blez $s1, Label
+branch if greater than unsigned		bgtu $s1, $s2, Label
+branch if greater than zero		bgtz $s1, Label
+branch if equal to zero			beqz $s1, Label
+multiplies and return only first 32 bits mul $s1, $s2, $s3
+divide and return quotient		div $s1, $s2, $s3
+divide and return remainder		rem $s1, $s2, $s3

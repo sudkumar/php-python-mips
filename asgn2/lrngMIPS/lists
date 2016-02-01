@@ -1,0 +1,58 @@
+# Lists in assembly are implemented using sbrk syscall which creates memory on demand
+
+# Let's write some functions for link list
+
+## First let's create the memory allocator
+### Takes input as the number of bytes to allocate and returns allocated address
+L_MALLOC:
+    # $a0 contains the bytes of space we want to create, so just pass it to sbrk
+    li $v0, 9	# prepare for sbrk syscall
+    syscall
+    beqz $v0, L_MEM_ERROR	# raise error if we are unable to assign the memory
+    jr $ra
+
+L_MEM_ERROR:
+    la 	$a0, out_mem_msg
+    li	$v0, 4			# print #a0
+    syscall
+
+## Let's make a new node with a given value
+L_NEW_NODE:
+    subu	$sp, $sp, 8		
+    sw  $s1, 4($sp)
+    sw	$ra, 0($sp)		# store the return address 
+    move 	$s1, $a0		# grab the parameter
+
+    li 	$a0, 8
+    jal	L_MALLOC			# create space of 8 bytes
+
+    add 	$t1, $zero, $zero	# create the zero next pointer
+
+    sw	$s1, 0($v0)		# store node->val
+    sw	$t1, 4($v0)		# store nove->next
+
+    lw	$s1, 4($s1)
+    lw  $ra, 0($sp)     # restore the return address
+    addi	$sp, $sp, 8		# restore the stack pointer
+    jr	$ra 
+
+## Now lets insert the new node to the list, input is the current_head and new val
+L_INSERT_NODE:
+    subu	$sp, $sp, 8
+    sw	$ra, 0($sp)		# store the return address
+    sw	$s1, 4($sp)
+
+    move	$s1, $a0		# copy the head
+    move	$a0, $a1		# copy the new val as the input for new node procedure
+    jal L_NEW_NODE			# create a new node 
+
+    sw	$s1, 4($v0)		# new_node->next = curr_head
+
+    lw 	$ra, 0($sp)		# restore the return address
+    lw 	$s1, 4($sp)
+    addi	$sp, $sp, 8		# restore the stack pointer
+    jr 	$ra
+
+# the data section
+	.data	
+out_mem_msg:	.asciiz		"Out of memory!!\n"

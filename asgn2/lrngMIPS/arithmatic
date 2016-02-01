@@ -1,0 +1,20 @@
+C Code:
+    A = B + C + D;
+    E = F - A;
+
+MIPS Code:
+    add $t0, $s1, $s2 # add s1 and s2 and move it to t0 
+    add $s0, $t0, $s3 
+    sub $s4, $s5, $s0 # subtract s0 from s5 and move it to s4
+
+
+C Code:
+    int f,g,h,i,j;
+    f = (g+h)-(i+j);
+
+MIPS Code:
+    # assuming $s0 = f, $s1 = g and so on...
+    add $s0, $s1, $s2
+    add $s1, $s3, $s4
+    sub $s0, $s0, $s1
+
