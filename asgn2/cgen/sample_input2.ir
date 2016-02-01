@@ -7,6 +7,7 @@
 7, goto, 5
 8, =, d, 6
 9, call, foo
+15, =, w, 2
 10, return
 11, label, foo
 12, print, x

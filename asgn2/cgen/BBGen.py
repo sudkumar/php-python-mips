@@ -45,13 +45,21 @@ class BBGen():
             
             # check for instruction type to be a jump
             elif(opType in JumpInstructions):
-                # get the jump target of this line, as it'll be a `leader`
-                self.addLeader(int(lnParser.jumpTarget))
+                # get the jump target of this line, as it'll be a `leader`, must be an integer
+                try:
+                    x = int(lnParser.jumpTarget)
+                except ValueError, e:
+                    # raise e
+                    x = e
+                else:
+                    self.addLeader(int(lnParser.jumpTarget))
 
                 # it was a jump statement, so next line will be the `leader` if it exists
                 i += 1
                 if i < countIRLines:
-                    self.addLeader(int(lnParser._ln)+1)     # add me to leaders
+                    lnParser = LineParser(self._ir[i])
+                    self.addLeader(int(lnParser._ln))  
+
                 else:
                     break                                   # reached at end of file
 

@@ -19,7 +19,7 @@ class LineParser():
             [string] -- Type of the current instruction
         """
 
-        # Match the _op with a instruction in IRInstructionTypes Dictoinary and return
+        # Match the _op with a instruction in IRInstructionTypes Dictionary and return
         typeOfInstruction = IRInstructionTypes[self._op]
         if(typeOfInstruction):
             return typeOfInstruction

@@ -47,9 +47,8 @@ def NextUseLive(basicBlock):
                     operand = int(operand)
                 except Exception, e:
                     # raise e
-                    if e:
-                        if not operand in nonTempVars:
-                            nonTempVars.append(operand)
+                    if not operand in nonTempVars:
+                        nonTempVars.append(operand)
 
     # Now intialize out symbol table
     for i in range(countLines+1):             # for each line
@@ -83,9 +82,7 @@ def NextUseLive(basicBlock):
                 try:
                     src = int(src)
                 except Exception, e:
-                    # raise e
-                    if  e:
-                        symbolTable[currLine][src] = [1,currLine+1]  # set next use to current line and live
+                    symbolTable[currLine][src] = [1,currLine+1]  # set next use to current line and live
 
     return symbolTable
 
