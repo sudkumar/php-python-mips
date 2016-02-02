@@ -17,7 +17,7 @@ IRInstructionTypes = {
 }
 
 # Jump Instructions
-JumpInstructions = ["cond_jump", "uncond_jump"]
+JumpInstructions = ["cond_jump", "uncond_jump", "func_call"]
 
 
 # Assignment Instructions

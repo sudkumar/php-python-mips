@@ -19,7 +19,7 @@ class LineParser():
             [string] -- Type of the current instruction
         """
 
-        # Match the _op with a instruction in IRInstructionTypes Dictoinary and return
+        # Match the _op with a instruction in IRInstructionTypes Dictionary and return
         typeOfInstruction = IRInstructionTypes[self._op]
         if(typeOfInstruction):
             return typeOfInstruction
@@ -41,4 +41,10 @@ class LineParser():
     @property
     def operands(self):
         return self._line[2:]       # Operands start from 3rd index till end
+
+
+    # Update the jump target to new target and return the new line
+    def updateJumpTarget(self, newTarget):
+        self._line[-1] = str(newTarget)
+        return ", ".join(self._line)
     
