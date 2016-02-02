@@ -19,6 +19,15 @@ Algorithm:
     3. In the sumbol table, set opnd2, opnd3 to "live" and the next uses of these to i 
 """
 def NextUseLive(basicBlock):
+    """ Get the information for next and liveness
+    Argemtents:
+        basicBlock list  --- A list of instruction
+
+    Returns:
+        {list} ---- {symbolTable, nonTempVars}
+    """
+
+
     symbolTable = []            # The symbol table that contains the information of next-use and liveness
     countLines = len(basicBlock)# The number of lines in basic block
 
@@ -38,7 +47,7 @@ def NextUseLive(basicBlock):
     for line in basicBlock:
         lineParser = LineParser(line)
         # check if the instruction is an assignment
-        if lineParser.type == "assgn":
+        if lineParser.type == "copy" or lineParser.type == "operation":
             # get the destination and sources
             operands = lineParser.operands
             for operand in operands:
@@ -70,7 +79,7 @@ def NextUseLive(basicBlock):
             symbolTable[currLine][var] = symbolTable[currLine+1][var]
 
         # update the entries for variables if necessary    
-        if lineParser.type == "assgn":
+        if lineParser.type == "copy" or lineParser.type == "operation":
             # get the operands
             operands = lineParser.operands
             # get the dest
@@ -84,7 +93,7 @@ def NextUseLive(basicBlock):
                 except Exception, e:
                     symbolTable[currLine][src] = [1,currLine+1]  # set next use to current line and live
 
-    return symbolTable
+    return symbolTable, nonTempVars
 
 if __name__ == '__main__':
     basicBlock = [

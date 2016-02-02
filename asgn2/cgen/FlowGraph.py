@@ -29,7 +29,10 @@ class FlowGraph():
         ir {string} -- An string consisting of Intermediate Representation of code.
     """
 
-    def __init__(self, bbs):
+    def __init__(self, ir):
+
+        # Generate the basic blocks
+        bbs = BBGen(ir)
         leaders = bbs._leaders
         countLeaders = len(leaders)
         ir = bbs._ir
@@ -126,8 +129,7 @@ if __name__ == '__main__':
     fp = open("sample_input2.ir", "r")
     lines = fp.read()
     fp.close()
-    bbs = BBGen(lines)
-    fg = FlowGraph(bbs)
+    fg = FlowGraph(lines)
     print fg._fns
     for blockNode in fg._blockNodes:
         print blockNode._block

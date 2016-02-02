@@ -3,11 +3,11 @@
 
 # Type of instructions in ir
 IRInstructionTypes = {
-    "="     :   "assgn", 
-    "+"     :   "assgn", 
-    "-"     :   "assgn", 
-    "*"     :   "assgn", 
-    "/"     :   "assgn", 
+    "="     :   "copy", 
+    "+"     :   "operation", 
+    "-"     :   "operation", 
+    "*"     :   "operation", 
+    "/"     :   "operation", 
     "ifgoto":   "cond_jump", 
     "goto"  :   "uncond_jump",  
     "call"  :   "func_call", 
