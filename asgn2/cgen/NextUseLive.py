@@ -3,16 +3,12 @@
 from LineParser import LineParser
 
 """Get the Next-Use and Liveness information for a Basic Block
-
 Given a Basic Block, our aim is to attach the information about Next-Use and Liveness for each statement line in that 
 Basic Block. We store information for each statement in a symbol table.
-
-
 Algorithm:
     We set symbol table to intially set all nontemporary variables as been live on exit.
     We start at the last statement in Basic Block `B` and scan backwards to beginning of B.
     At each step i, oprt,opnd1, opnd2, opnd3... in B, we do the following:
-
     1. Attach to statement i, the information currently found in symbol table
     regarding the next use and live of all variables.
     2. if opnd1 get assigned some value, set it's entry to "not live" and "no next use".
@@ -47,9 +43,8 @@ def NextUseLive(basicBlock):
                     operand = int(operand)
                 except Exception, e:
                     # raise e
-                    if e:
-                        if not operand in nonTempVars:
-                            nonTempVars.append(operand)
+                    if not operand in nonTempVars:
+                        nonTempVars.append(operand)
 
     # Now intialize out symbol table
     for i in range(countLines+1):             # for each line
@@ -83,9 +78,7 @@ def NextUseLive(basicBlock):
                 try:
                     src = int(src)
                 except Exception, e:
-                    # raise e
-                    if  e:
-                        symbolTable[currLine][src] = [1,currLine+1]  # set next use to current line and live
+                    symbolTable[currLine][src] = [1,currLine+1]  # set next use to current line and live
 
     return symbolTable
 
