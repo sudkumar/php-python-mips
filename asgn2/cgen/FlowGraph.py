@@ -7,6 +7,7 @@ from LineParser import LineParser   # Get the line parser
 from Config import IRInstructionTypes
 from Config import JumpInstructions
 
+
 class Node():
     """A Node in Flow Grpth"""
     def __init__(self, block):
@@ -87,7 +88,7 @@ class FlowGraph():
 
 
             if parsedLine.type in JumpInstructions:
-                # it's a jump instruction, so get the target `leader` and add that to my successor
+                # it's a jump instruction, so get the target `leader` and add that to my successor  
                 jumpTarget = parsedLine.jumpTarget
                 try:
                     jumpTargetInt = int(jumpTarget)
@@ -101,7 +102,7 @@ class FlowGraph():
                 finally:
                     # append the node
                     nodes[i].addSucc(nodes[leaders.index(jumpTargetInt)])
-                    # update the target to point to the successor instead of line number
+                    # update the target to point to the successor instead of line number   
                     nodes[i]._block[-1] = parsedLine.updateJumpTarget("B"+str(leaders.index(jumpTargetInt)+1))
 
                 # check if it a conditional jump instructions
@@ -126,7 +127,7 @@ class FlowGraph():
         self._blockNodes = nodes
 
 if __name__ == '__main__':
-    fp = open("sample_input2.ir", "r")
+    fp = open("sample_input3.ir", "r")
     lines = fp.read()
     fp.close()
     fg = FlowGraph(lines)

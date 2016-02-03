@@ -7,8 +7,13 @@
 7, goto, 5
 8, =, d, k
 9, call, foo
+<<<<<<< HEAD
 10, =, w, s
 11, return
+=======
+10, =, w, 2
+11, return 
+>>>>>>> b4b5e3d6b5475698caea1501511aaa8b06e97856
 12, label, foo
 13, print, x
 14, return

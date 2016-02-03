@@ -34,7 +34,8 @@ class LineParser():
         Returns:
             {string} -- Name of the label operands
         """
-        
+        if self.type == "func_call":
+            return self._line[2] 
         return self._line[-1]       # Jump targets are at the end of statements
     
 
@@ -45,6 +46,27 @@ class LineParser():
 
     # Update the jump target to new target and return the new line
     def updateJumpTarget(self, newTarget):
-        self._line[-1] = str(newTarget)
+        if self.type == "func_call":
+            self._line[2] = str(newTarget)
+        else:    
+            self._line[-1] = str(newTarget)
         return ", ".join(self._line)
+    
+    @property
+    def condExpr(self):
+        return self._line[2:5]
+
+    @property
+    def returnVals(self):
+        if len(self._line) > 2:
+            return self._line[2:]
+        return []
+    @property
+    def funParameters(self):
+        return self._line[3:]
+    
+
+    @property
+    def printArgs(self):
+        return self._line[2]
     

@@ -54,8 +54,8 @@ class BBGen():
                 i += 1
                 if i < countIRLines:
                     lnParser = LineParser(self._ir[i])
-                    self.addLeader(lnParser._ln)  
-
+                    self.addLeader(lnParser._ln) 
+                    continue 
                 else:
                     break                                   # reached at end of file
 
@@ -84,7 +84,7 @@ class BBGen():
 
 
 if __name__ == '__main__':
-    fp = open("sample_input2.ir", "r")
+    fp = open("sample_input3.ir", "r")
     bbGen = BBGen(fp.read())
     print bbGen._leaders
     print bbGen._fns

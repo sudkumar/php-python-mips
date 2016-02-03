@@ -6,6 +6,9 @@ from NextUseLive import NextUseLive
 
 from LineParser import LineParser
 
+
+from Translator import Translator
+
 """Code Generator
 
     This is the code generator for PHP, assembles all the components for generating code.
@@ -24,17 +27,20 @@ class CodeGen():
         # The Address Descriptor table, contains information about all the non local variables's value location
         self._addrDis = {}      
         # The Register Descriptor table, contains information about allocation of all the registers
-        self._regDis = {"$1":[], "$2":[], "$3":[]}  
+        self._regDis = {"$t0":[], "$t1":[], "$t2":[], "$t3":[], "$s0":[], "$s1":[]}  
+
+        self._tr = Translator()
 
         # a set of empty registers
         self._freeRs = []
         for reg in self._regDis:
             self._freeRs.append(reg)
 
-        self._spillHappen = False       # check if spill happened
-        self._splliedSmts = []           # instruction genereated by spill
-
         self._globalVars = {}
+        self._newBlockIns = []
+        # Holds register which stores constant for a instruction. 
+        # There registers must be free after execution of that instruction
+        self._toFreeRs = []  
 
         # For each node in blockNode of flow graph as node:
         for node in blockNodes:
@@ -57,11 +63,10 @@ class CodeGen():
 
             #- For each Instruction `Ins` in `blockIns`:
             i = 0
-            newBlockIns = []
+            self._newBlockIns = []
+            jumpIns = []
             for ins in blockIns:
-                self._spillHappen = False
-                self._splliedSmts = []
-
+                self._toFreeRs = []
                 # get the next use info about the current line
                 nextUse = nextUseLiveST[i+1]
 
@@ -69,36 +74,83 @@ class CodeGen():
                 # if `Ins` isOfType "Operations" (dest = src1 op src2):
                 parsedIns = LineParser(ins)
                 if parsedIns.type == "operation":
-
                     #  handle to operation type and return generated instructions
-                    newBlockIns += self.handleOps(parsedIns, nextUse)                    
+                    self.handleOps(parsedIns, nextUse)                    
 
                 # else if `Ins` isOfType "Copy Statement"(dest = src):
                 elif parsedIns.type == "copy":
+                    self.handleCopy(parsedIns, nextUse)
 
-                    newBlockIns += self.handleCopy(parsedIns, nextUse)
+                # else if `Ins` isOfType "cond_jump"
+                elif parsedIns.type == "cond_jump":
+                    condExpr = parsedIns.condExpr
+                    variabels = [condExpr[0], condExpr[2]]
+                    # get registers for all variabels
+                    allocatedRs = self.regForOperands(variabels, nextUse)
+                    
+                    newExp = [allocatedRs[variabels[0]], condExpr[1] ,allocatedRs[variabels[1]]]
+                    self._newBlockIns.append(self._tr.getInstCondJump(newExp, parsedIns.jumpTarget))
+
+                # else if `Ins` is of type "uncond_jump"
+                elif parsedIns.type == "uncond_jump":
+                    jumpIns.append("j "+parsedIns.operands[0])
+
+                # else if `Ins` is of type "func_call"    
+                elif parsedIns.type == "func_call":
+                    parms = parsedIns.funParameters
+                    # get registers for all variabels
+                    allocatedRs = self.regForOperands(parms, nextUse)
+                        
+                    # add the argument instructions
+                    i = 0
+                    for parm in parms:
+                        jumpIns.append("move $a"+str(i)+", "+allocatedRs[parm])
+                        i += 1
+                    jumpIns.append("jal "+parsedIns.operands[0])
+
+                # else if `Ins` is of type "func_label"
+                elif parsedIns.type == "func_label":
+                    # self._newBlockIns.append(""+parsedIns.operands[0])
+                    x = 1
+                elif parsedIns.type == "return":
+                    returnVals = parsedIns.returnVals
+                    allocatedRs = self.regForOperands(returnVals, nextUse)
+                   
+                    # add the load for return value
+                    i = 0
+                    for ret in returnVals:
+                        jumpIns.append("move $v"+str(i)+", "+allocatedRs[ret])
+                        i += 1
+                    jumpIns.append("jr $ra")
+
+
+                elif parsedIns.type == "print":
+                    arg = parsedIns.printArgs
+                    allocatedRs = self.regForOperands([arg], nextUse)
+                    self._newBlockIns.append(self._tr.getInstPrint("integer", allocatedRs[arg]))
 
                 else:
-                    newBlockIns.append(ins)
+                    self._newBlockIns.append(ins)
 
                 i += 1
 
-            # we done with the block, now time to restore the lost values
-            
-            newBlockIns += self.restoreAtEnd(nonTempVars)
-
+            # we done with the block, now time to restore the lost values 
+            self._newBlockIns += self.restoreAtEnd(nonTempVars)
+            self._newBlockIns += jumpIns
             ##### End of for loop for this block
-
             # update the node to contain the updated instruction set
-            # self._newBlock += newBlockIns
-            node._block = newBlockIns
+            # self._newBlock += self._newBlockIns
+            node._block = self._newBlockIns
+
+            # For register to be free, Free them
+            for reg in self._toFreeRs:
+                self._freeRs.append(reg)
 
         self._flowGraph = flowGraph
 
 
     # Handler for operation type instructions
     def handleOps(self, parsedIns, nextUse):
-        genereatedIns = []      # to store the generated instructions if there is any
         operands = parsedIns.operands
         dest = operands[0]          # destination var
         srcs = operands[1:]         # source var
@@ -110,26 +162,12 @@ class CodeGen():
         for src in srcs:
             if isInt(src):
                 if parsedIns._op != "+":
-                    # generate a fake instruction for copy and get the register allocation for it
-                    fakeIn= "0, , "
-                    fakeParsedIn = LineParser(fakeIn)
-                    # get the register
-                    fakeReg = self.spill(nextUse, fakeParsedIn.operands, [])
-                    allocatedSrcs[str(src)] = fakeReg
-                    # genereatedIns.append(Translator.load(allocatedRs[src], src))
-                    genereatedIns.append("li "+fakeReg+", "+src)
-                    self.removeFromFreeRs(fakeReg)
-
-                    # update the register descriptor
-                    self._regDis[fakeReg] = []
-
-                    # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
-                    for var in self._addrDis:
-                        if fakeReg in self._addrDis[var]:
-                            self._addrDis[var].remove(fakeReg)
+                    # allocate a register for this contant integer
+                    allocatedSrcs[str(src)] = self.regForIntConst(nextUse, src)
 
         # Get Registers for all operands (using GetReg(Ins) method). Say R_dest, R_src1, R_src2.
         allocatedRs = self.getReg(parsedIns, nextUse)
+
         # update the allocated registers if srcs were already alloted by the above method
         for src in allocatedSrcs:
             allocatedRs[src] = allocatedSrcs[src]
@@ -137,10 +175,6 @@ class CodeGen():
         # print allocatedRs
         rDest = allocatedRs[dest]   # register assigned to destination
 
-        # if spill happened, get the instructions
-        if self._spillHappen:
-            genereatedIns += self._splliedSmts
-            
 
         # For operand `src` in `Ins.srcOperands`:
         for src in srcs:
@@ -153,8 +187,7 @@ class CodeGen():
                 # if `src` not in 'Register' (according to Reg_Des for R_src):
                 if not src in self._regDis[rSrc]: 
                     # Issue `load R_src, src` Instruction.
-                    # genereatedIns.append(Translator.load(allocatedRs[src], src))
-                    genereatedIns.append("lw "+allocatedRs[src]+", "+src)
+                    self._newBlockIns.append("lw "+allocatedRs[src]+", "+src)
                     
                     # Change the Reg_Des[R_src] so it holds only `src`.
                     self._regDis[rSrc] = [src]
@@ -162,12 +195,16 @@ class CodeGen():
                     # Change the Addr_Des[src] by adding `R_src` as an additional location.
                     self._addrDis[src].append(rSrc)         
 
-        # Issue The Instruction `op R_dest, R_src1, R_src2`
-        # genereatedIns.append(Translator.op(parsedIns._op, operands))
-        genereatedIns.append(parsedIns._op+" "+ ', '.join(map(lambda x: allocatedRs[x], operands)))
+        # handle the same src case, as mips wont allow that
+        # if (srcs[0] == srcs[1]):
+        #     newReg = self.regForIntConst(nextUse, '0', allocatedRs)
+        #     self._newBlockIns.append("move "+newReg+", "+allocatedRs[srcs[0]])
+        #     self._newBlockIns.append(self._tr.getInstOp(parsedIns._op, [rDest, newReg, allocatedRs[srcs[1]]] ))
+        # else:
+        self._newBlockIns.append(self._tr.getInstOp(parsedIns._op, map(lambda x: allocatedRs[x], operands)))
 
-        for src in allocatedSrcs:
-            self._freeRs.append(allocatedSrcs[src])
+        # Issue The Instruction `op R_dest, R_src1, R_src2`
+        # genereatedIns.append(parsedIns._op+" "+ ', '.join(map(lambda x: allocatedRs[x], operands)))
 
         # Change the Reg_Des[R_dest] so that it holds only `dest`.
         self._regDis[rDest] = [dest]
@@ -177,16 +214,10 @@ class CodeGen():
         self._addrDis[dest] = [rDest]
 
         # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
-        for var in self._addrDis:
-            if not var == dest:
-                if rDest in self._addrDis[var]:
-                    self._addrDis[var].remove(rDest)
-
-        return genereatedIns    # return the generated instructions
+        self.removeRFromAddrDis(rDest, dest)
 
 
     def handleCopy(self, parsedIns, nextUse):
-        genereatedIns = []          # to store the generated instructions
 
         operands = parsedIns.operands
         dest = operands[0]
@@ -195,15 +226,14 @@ class CodeGen():
         # Get Registers for all operands (using GetReg(Ins) method). Say R_dest = R_src. 
         # Both allocated must be same
         allocatedRs = self.getReg(parsedIns, nextUse)
-        # print allocatedRs
         rSrc = allocatedRs[src]         # register assigned to source = destination
         rDest = allocatedRs[dest]
         isSrcInt = isInt(src)
         # If src=Ins.srcOperand is not in 'Register' and not a int:
         if not isSrcInt and (not src in self._regDis[rSrc]):
             # Issue `load R_src, src` Instruction.
-            # newBlockIns.append(Translator.load(allocatedRs[src], src))
-            genereatedIns.append("lw "+allocatedRs[src]+", "+src)
+            # self._newBlockIns.append(Translator.load(allocatedRs[src], src))
+            self._newBlockIns.append("lw "+allocatedRs[src]+", "+src)
             
             # Change the Reg_Des[R_src] so it holds only `src`.
             self._regDis[rSrc] = [src]
@@ -218,11 +248,8 @@ class CodeGen():
         self._addrDis[dest] = [rDest]
 
         if isSrcInt:
-            # newBlockIns.append(Translator.li(allocatedRs[src], src))
-            genereatedIns.append("li "+allocatedRs[dest]+", "+src)
-
-        return genereatedIns        # return the generated instructions
-
+            # self._newBlockIns.append(Translator.li(allocatedRs[src], src))
+            self._newBlockIns.append("li "+allocatedRs[dest]+", "+src)
 
     def getReg(self, parsedIns, nextUse):
         """Get Register
@@ -338,12 +365,11 @@ class CodeGen():
 
         # else pick a register which is most suitable. Say this register is R. And suppose it holds value for variable `v`
         allocatedR = self.spill(nextUse, operands, allocatedRs)
-        if allocatedRs:
+        if allocatedR:
             # create the added stores for the selected register
-            self._spillHappen = True
             for var in self._regDis[allocatedR]:
-                # self._splliedSmts.append(Translator.store(var, allocatedR))
-                self._splliedSmts.append("sw "+var+", "+allocatedR)
+                # self._newBlockIns.append(Translator.store(var, allocatedR))
+                self._newBlockIns.append("sw "+allocatedR+", "+var)
 
                 # update the address discriptor for these variables
                 self._addrDis[var].append(var)
@@ -401,7 +427,33 @@ class CodeGen():
 
         return allocatedR
 
+    # Get register for variables. These instructions are other than copy and operations.
+    def regForOperands(self, operands, nextUse):
+        allocatedRs = {}
+        for op in operands:
+            if isInt(op):
+                allocatedRs[str(op)] = self.regForIntConst(nextUse, op)
+            else:
+                allocatedRs[op] = self.pickSuitableR(op, operands, nextUse, allocatedRs)
+        return allocatedRs
 
+    # Allocate a register for integer constant loading
+    def regForIntConst(self, nextUse, const, allocatedRs=[]):
+        # generate a fake instruction for copy and get the register allocation for it
+        fakeIn= "0, , "
+        fakeParsedIn = LineParser(fakeIn)
+        # get the register
+        fakeReg = self.spill(nextUse, fakeParsedIn.operands, allocatedRs)
+        # genereatedIns.append(Translator.load(allocatedRs[src], src))
+        self._newBlockIns.append("li "+fakeReg+", "+const)
+        self.removeFromFreeRs(fakeReg)
+        # update the register descriptor
+        self._regDis[fakeReg] = []
+        # Remove `fakeReg` from the Address Descriptor of any variable
+        self.removeRFromAddrDis(fakeReg)
+        # add this register to list of register which must be free after instruction execution
+        self._toFreeRs.append(fakeReg)
+        return fakeReg
 
     # Restore the variables at the end block which are needed. 
     def restoreAtEnd(self, nonTempVars):
@@ -421,12 +473,14 @@ class CodeGen():
                 if rX:
                     # Issue `store x, R_x` Instruction.
                     # genereatedIns.append(Translator.store(x,rX))
-                    genereatedIns.append("sw "+x+", "+rX)
+                    genereatedIns.append("sw "+rX+", "+x)
 
                     # Change the Addr_Des[x] to include it's own memory `x`.
                     self._addrDis[x].append(x)
                 else:
-                    print "No register contians value of "+x
+                    print self._regDis
+                    print self._addrDis
+                    print "Unable to restore value of:"+x
 
         return genereatedIns        # return the generated instructions
 
@@ -447,6 +501,14 @@ class CodeGen():
             return True
         return False
 
+    # Remove a given register from address discriptor of any other then from variable `me`
+    def removeRFromAddrDis(self, reg, me=None):    
+        for var in self._addrDis:
+            if not var == me:
+                if reg in self._addrDis[var]:
+                    self._addrDis[var].remove(reg)
+
+
 def isInt(val):
     try:
         val = int(val)
@@ -464,11 +526,13 @@ if __name__ == '__main__':
     code = CodeGen(inputLines)
     print "\t .data"
     for var in code._globalVars:
-        print var + ":\t.word"
+        print var + ":\t.word\t0"
     print "\t .text"
+    # print "\t .global main"
     flowGraph = code._flowGraph
     blockNodes = flowGraph._blockNodes
     countNodes = len(blockNodes)
+    tr =  Translator()
     i = 0
     for node in blockNodes:
         if node._block == "entry":
@@ -477,8 +541,7 @@ if __name__ == '__main__':
             continue
         if node._block == "exit":
             print "exit:"
-            print "\tli $v0, 10"
-            print "\tsyscall"
+            print tr.getInstExit()
         else:
             if i == 1:
                 print "main:"

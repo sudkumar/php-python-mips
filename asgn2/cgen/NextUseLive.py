@@ -3,16 +3,12 @@
 from LineParser import LineParser
 
 """Get the Next-Use and Liveness information for a Basic Block
-
 Given a Basic Block, our aim is to attach the information about Next-Use and Liveness for each statement line in that 
 Basic Block. We store information for each statement in a symbol table.
-
-
 Algorithm:
     We set symbol table to intially set all nontemporary variables as been live on exit.
     We start at the last statement in Basic Block `B` and scan backwards to beginning of B.
     At each step i, oprt,opnd1, opnd2, opnd3... in B, we do the following:
-
     1. Attach to statement i, the information currently found in symbol table
     regarding the next use and live of all variables.
     2. if opnd1 get assigned some value, set it's entry to "not live" and "no next use".
@@ -78,7 +74,8 @@ def NextUseLive(basicBlock):
         for var in nonTempVars:
             symbolTable[currLine][var] = symbolTable[currLine+1][var]
 
-        # update the entries for variables if necessary    
+        # update the entries for variables if necessary
+        variables = []    
         if lineParser.type == "copy" or lineParser.type == "operation":
             # get the operands
             operands = lineParser.operands
@@ -87,11 +84,32 @@ def NextUseLive(basicBlock):
             symbolTable[currLine][dest] = [0,-1]    # set no next use, not live
 
             # update the sources
-            for src in operands[1:]:
-                try:
-                    src = int(src)
-                except Exception, e:
-                    symbolTable[currLine][src] = [1,currLine+1]  # set next use to current line and live
+            variables = operands[1:]
+            
+        elif lineParser.type == "cond_jump":
+            # get the conditional expressions
+            expr = lineParser.condExpr
+            variables = [expr[0], expr[2]]
+            
+        elif lineParser.type == "return":
+            # get the return value
+            variables = lineParser.returnVals
+            
+        elif lineParser.type == "func_call":
+            # get the parameters val
+            variables = lineParser.funParameters
+
+        elif lineParser.type == "print":
+            # get arguments of print
+            variables = lineParser.printArgs
+
+        # now update the necessary variables
+        for src in variables:
+            try:
+                src = int(src)
+            except Exception, e:
+                symbolTable[currLine][src] = [1,currLine+1]  # set next use to current line and live
+
 
     return symbolTable, nonTempVars
 
@@ -101,7 +119,7 @@ if __name__ == '__main__':
         "2, +, b, a, 2",
         "3, +, a, a, 2",
         "4, =, c, 2",
-        "5, ifgoto, blt, a, c, 3"
+        "5, ifgoto, a, < , c, 3"
     ]
     print NextUseLive(basicBlock)
     
