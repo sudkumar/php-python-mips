@@ -24,7 +24,7 @@ class CodeGen():
         # The Address Descriptor table, contains information about all the non local variables's value location
         self._addrDis = {}      
         # The Register Descriptor table, contains information about allocation of all the registers
-        self._regDis = {"$1":[], "$2":[], "$3":[], "$4":[], "$5":[]}  
+        self._regDis = {"$1":[], "$2":[], "$3":[]}  
 
         # a set of empty registers
         self._freeRs = []
@@ -33,8 +33,6 @@ class CodeGen():
 
         self._spillHappen = False       # check if spill happened
         self._splliedSmts = []           # instruction genereated by spill
-
-        self._newBlock = []
 
         self._globalVars = {}
 
@@ -48,6 +46,11 @@ class CodeGen():
             # Generate the Next-Use-Live for `blockIns`.
             nextUseLiveST, nonTempVars = NextUseLive(blockIns)
             
+            # check if the key exists in address discriptor
+            for var in nonTempVars:
+                if not self.isInAddrDis(var):
+                    self._addrDis[var] = [var]  
+
             # add the nonTemp variables into global data region
             for var in nonTempVars:
                 self._globalVars[var] = ""
@@ -67,95 +70,13 @@ class CodeGen():
                 parsedIns = LineParser(ins)
                 if parsedIns.type == "operation":
 
-                    operands = parsedIns.operands
-                    # Get Registers for all operands (using GetReg(Ins) method). Say R_dest, R_src1, R_src2.
-                    allocatedRs = self.getReg(parsedIns, nextUse)
-                    # print allocatedRs
-
-                    # if spill happened, get the instructions
-                    if self._spillHappen:
-                        newBlockIns += self._splliedSmts
-                        
-                    dest = operands[0]          # destination var
-                    rDest = allocatedRs[dest]   # register assigned to destination
-                    srcs = operands[1:]         # source var
-
-                    # For operand `src` in `Ins.srcOperands`:
-                    for src in srcs:
-                        error = None
-                        if parsedIns._op == "+":
-                            try:
-                                src = int(src)
-                            except ValueError, e:
-                                # raise e
-                                error = e
-                        if error:
-                            rSrc = allocatedRs[src]
-                            # if `src` not in 'Register' (according to Reg_Des for R_src):
-                            if not src in self._regDis[rSrc]: 
-                                # Issue `load R_src, src` Instruction.
-                                # newBlockIns.append(Translator.load(allocatedRs[src], src))
-                                newBlockIns.append("lw "+allocatedRs[src]+", "+src)
-                                
-                                # Change the Reg_Des[R_src] so it holds only `src`.
-                                self._regDis[rSrc] = [src]
-                                
-                                # Change the Addr_Des[src] by adding `R_src` as an additional location.
-                                self._addrDis[src].append(rSrc)         
-
-                    # Issue The Instruction `op R_dest, R_src1, R_src2`
-                    # newBlockIns.append(Translator.op(parsedIns._op, operands))
-                    newBlockIns.append(parsedIns._op+" "+ ', '.join(map(lambda x: allocatedRs[x], operands)))
-
-                    # Change the Reg_Des[R_dest] so that it holds only `dest`.
-                    self._regDis[rDest] = [dest]
-                    
-                    # Change the Addr_Des[dest] so that it holds only location `R_dest`. We removed any memory location of `dest`
-                    #  which was in Addr_Des[dest] and We'll add it at the end of block. NO WORRIES!!!.
-                    self._addrDis[dest] = [rDest]
-
-                    # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
-                    for var in self._addrDis:
-                        if not var == dest:
-                            if rDest in self._addrDis[var]:
-                                self._addrDis[var].remove(rDest)
-
+                    #  handle to operation type and return generated instructions
+                    newBlockIns += self.handleOps(parsedIns, nextUse)                    
 
                 # else if `Ins` isOfType "Copy Statement"(dest = src):
                 elif parsedIns.type == "copy":
 
-                    operands = parsedIns.operands
-                    dest = operands[0]
-                    src = operands[1]
-
-                    # Get Registers for all operands (using GetReg(Ins) method). Say R_dest = R_src. 
-                    # Both allocated must be same
-                    allocatedRs = self.getReg(parsedIns, nextUse)
-                    # print allocatedRs
-                    rSrc = allocatedRs[src]         # register assigned to source = destination
-                    rDest = allocatedRs[dest]
-                    isSrcInt = isInt(src)
-                    # If src=Ins.srcOperand is not in 'Register' and not a int:
-                    if not isSrcInt and (not src in self._regDis[rSrc]):
-                        # Issue `load R_src, src` Instruction.
-                        # newBlockIns.append(Translator.load(allocatedRs[src], src))
-                        newBlockIns.append("li "+allocatedRs[src]+", "+src)
-                        
-                        # Change the Reg_Des[R_src] so it holds only `src`.
-                        self._regDis[rSrc] = [src]
-
-                        # Change the Addr_Des[src] by adding `R_src` as an additional location.
-                        self._addrDis[src].append(rSrc)
-
-                    # Adjust the Reg_Des[R_src] to include `dest`.
-                    self._regDis[rDest].append(dest)
-
-                    # Change the Addr_Des[dest] so that it holds only location `R_dest`.
-                    self._addrDis[dest] = [rDest]
-
-                    if isSrcInt:
-                        # newBlockIns.append(Translator.li(allocatedRs[src], src))
-                        newBlockIns.append("li "+allocatedRs[dest]+", "+src)
+                    newBlockIns += self.handleCopy(parsedIns, nextUse)
 
                 else:
                     newBlockIns.append(ins)
@@ -163,27 +84,8 @@ class CodeGen():
                 i += 1
 
             # we done with the block, now time to restore the lost values
-            # For Each non temporary variable `x` in `node`:
-            for x in nonTempVars:
-                # if Addr_Des[x] don't say that its value is located in the memory location x:
-                if not x in self._addrDis[x]:
-                    # Get the register R_x = Addr_Des[x], which contains value of `x` at the end of block.
-                    rX = None 
-                    for location in self._addrDis[x]:
-                        if self.isInRegDis(location):
-                            # location is a register
-                            if x in self._regDis[location]:
-                                rX = location
-                                break
-                    if rX:
-                        # Issue `store x, R_x` Instruction.
-                        # newBlockIns.append(Translator.store(x,rX))
-                        newBlockIns.append("sw "+x+", "+rX)
-
-                        # Change the Addr_Des[x] to include it's own memory `x`.
-                        self._addrDis[x].append(x)
-                    else:
-                        print "No register contians value of "+x+" at " + str(ins)
+            
+            newBlockIns += self.restoreAtEnd(nonTempVars)
 
             ##### End of for loop for this block
 
@@ -192,6 +94,134 @@ class CodeGen():
             node._block = newBlockIns
 
         self._flowGraph = flowGraph
+
+
+    # Handler for operation type instructions
+    def handleOps(self, parsedIns, nextUse):
+        genereatedIns = []      # to store the generated instructions if there is any
+        operands = parsedIns.operands
+        dest = operands[0]          # destination var
+        srcs = operands[1:]         # source var
+
+        # check if there is any int constant in srcs and the the operation is not addition 
+        # if there is any, make a register allotment and store contant in that register
+        # and remove that src from srcs
+        allocatedSrcs = {}       
+        for src in srcs:
+            if isInt(src):
+                if parsedIns._op != "+":
+                    # generate a fake instruction for copy and get the register allocation for it
+                    fakeIn= "0, , "
+                    fakeParsedIn = LineParser(fakeIn)
+                    # get the register
+                    fakeReg = self.spill(nextUse, fakeParsedIn.operands, [])
+                    allocatedSrcs[str(src)] = fakeReg
+                    # genereatedIns.append(Translator.load(allocatedRs[src], src))
+                    genereatedIns.append("li "+fakeReg+", "+src)
+                    self.removeFromFreeRs(fakeReg)
+
+                    # update the register descriptor
+                    self._regDis[fakeReg] = []
+
+                    # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
+                    for var in self._addrDis:
+                        if fakeReg in self._addrDis[var]:
+                            self._addrDis[var].remove(fakeReg)
+
+        # Get Registers for all operands (using GetReg(Ins) method). Say R_dest, R_src1, R_src2.
+        allocatedRs = self.getReg(parsedIns, nextUse)
+        # update the allocated registers if srcs were already alloted by the above method
+        for src in allocatedSrcs:
+            allocatedRs[src] = allocatedSrcs[src]
+
+        # print allocatedRs
+        rDest = allocatedRs[dest]   # register assigned to destination
+
+        # if spill happened, get the instructions
+        if self._spillHappen:
+            genereatedIns += self._splliedSmts
+            
+
+        # For operand `src` in `Ins.srcOperands`:
+        for src in srcs:
+            error = None
+            # if op is addition and src is int, then we know, we added a fake register. so no need
+            # to for a load or change in addr and register discriptor tables
+            # else
+            if not isInt(src):
+                rSrc = allocatedRs[src]
+                # if `src` not in 'Register' (according to Reg_Des for R_src):
+                if not src in self._regDis[rSrc]: 
+                    # Issue `load R_src, src` Instruction.
+                    # genereatedIns.append(Translator.load(allocatedRs[src], src))
+                    genereatedIns.append("lw "+allocatedRs[src]+", "+src)
+                    
+                    # Change the Reg_Des[R_src] so it holds only `src`.
+                    self._regDis[rSrc] = [src]
+                    
+                    # Change the Addr_Des[src] by adding `R_src` as an additional location.
+                    self._addrDis[src].append(rSrc)         
+
+        # Issue The Instruction `op R_dest, R_src1, R_src2`
+        # genereatedIns.append(Translator.op(parsedIns._op, operands))
+        genereatedIns.append(parsedIns._op+" "+ ', '.join(map(lambda x: allocatedRs[x], operands)))
+
+        for src in allocatedSrcs:
+            self._freeRs.append(allocatedSrcs[src])
+
+        # Change the Reg_Des[R_dest] so that it holds only `dest`.
+        self._regDis[rDest] = [dest]
+        
+        # Change the Addr_Des[dest] so that it holds only location `R_dest`. We removed any memory location of `dest`
+        #  which was in Addr_Des[dest] and We'll add it at the end of block. NO WORRIES!!!.
+        self._addrDis[dest] = [rDest]
+
+        # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
+        for var in self._addrDis:
+            if not var == dest:
+                if rDest in self._addrDis[var]:
+                    self._addrDis[var].remove(rDest)
+
+        return genereatedIns    # return the generated instructions
+
+
+    def handleCopy(self, parsedIns, nextUse):
+        genereatedIns = []          # to store the generated instructions
+
+        operands = parsedIns.operands
+        dest = operands[0]
+        src = operands[1]
+
+        # Get Registers for all operands (using GetReg(Ins) method). Say R_dest = R_src. 
+        # Both allocated must be same
+        allocatedRs = self.getReg(parsedIns, nextUse)
+        # print allocatedRs
+        rSrc = allocatedRs[src]         # register assigned to source = destination
+        rDest = allocatedRs[dest]
+        isSrcInt = isInt(src)
+        # If src=Ins.srcOperand is not in 'Register' and not a int:
+        if not isSrcInt and (not src in self._regDis[rSrc]):
+            # Issue `load R_src, src` Instruction.
+            # newBlockIns.append(Translator.load(allocatedRs[src], src))
+            genereatedIns.append("lw "+allocatedRs[src]+", "+src)
+            
+            # Change the Reg_Des[R_src] so it holds only `src`.
+            self._regDis[rSrc] = [src]
+
+            # Change the Addr_Des[src] by adding `R_src` as an additional location.
+            self._addrDis[src].append(rSrc)
+
+        # Adjust the Reg_Des[R_src] to include `dest`.
+        self._regDis[rDest].append(dest)
+
+        # Change the Addr_Des[dest] so that it holds only location `R_dest`.
+        self._addrDis[dest] = [rDest]
+
+        if isSrcInt:
+            # newBlockIns.append(Translator.li(allocatedRs[src], src))
+            genereatedIns.append("li "+allocatedRs[dest]+", "+src)
+
+        return genereatedIns        # return the generated instructions
 
 
     def getReg(self, parsedIns, nextUse):
@@ -230,12 +260,11 @@ class CodeGen():
             # select a register that only holds value for x, if there is one.
             found = False
             for reg in self._regDis:
-                if len(self._regDis[reg]) == 1 and self.isInAddrDis(dest):
+                if len(self._regDis[reg]) == 1 and dest in self._regDis[reg]:
                     allocatedRs[dest] = reg
                     self.removeFromFreeRs(reg)      # remove the register from free list
                     found = True
                     break
-
             if not found:
                 # for all srcs:
                 for src in srcs:
@@ -294,10 +323,7 @@ class CodeGen():
         
         Arguments:
             var {strinf} -- variable for which we want to get a register.
-        """
-        # check if the key exists in address discriptor
-        if not self.isInAddrDis(var):
-            self._addrDis[var] = []    
+        """  
 
         # if Addr_Des[var] contains a register: assign that register to it.
         for location in self._addrDis[var]:
@@ -311,15 +337,32 @@ class CodeGen():
             return self._freeRs[0]
 
         # else pick a register which is most suitable. Say this register is R. And suppose it holds value for variable `v`
+        allocatedR = self.spill(nextUse, operands, allocatedRs)
+        if allocatedRs:
+            # create the added stores for the selected register
+            self._spillHappen = True
+            for var in self._regDis[allocatedR]:
+                # self._splliedSmts.append(Translator.store(var, allocatedR))
+                self._splliedSmts.append("sw "+var+", "+allocatedR)
+
+                # update the address discriptor for these variables
+                self._addrDis[var].append(var)
+        else:
+            print "Unable to get any register by spill for var at:" + ', '.join(operands)
+
+        return allocatedR
+
+    # Spilling 
+    def spill(self, nextUse, operands, allocatedRs):
         dest = operands[0]
         srcs = operands[1:]
-        scores = {}
 
-        # get the current rs and make sure that we don't give the current var, one of these registers
+        # get the current rs and make sure that we don't give the current var, one of these registers        
         rs = []
         for x in allocatedRs:
             rs.append(allocatedRs[x])
 
+        scores = {}
         for reg in self._regDis:
             if reg in rs:
                 continue
@@ -356,19 +399,36 @@ class CodeGen():
                 minScore = scores[reg]
                 allocatedR = reg
 
-        if not allocatedR:
-            print "Unable to assign a register for variable :" + var
-        else:
-            # create the added stores for the selected register
-            self._spillHappen = True
-            for var in self._regDis[allocatedR]:
-                # self._splliedSmts.append(Translator.store(var, allocatedR))
-                self._splliedSmts.append("sw "+var+", "+allocatedR)
-
-                # update the address discriptor for these variables
-                self._addrDis[var].append(var)
         return allocatedR
 
+
+
+    # Restore the variables at the end block which are needed. 
+    def restoreAtEnd(self, nonTempVars):
+        genereatedIns = []          # generated instructions by store
+        # For Each non temporary variable `x` in `node`:
+        for x in nonTempVars:
+            # if Addr_Des[x] don't say that its value is located in the memory location x:
+            if not x in self._addrDis[x]:
+                # Get the register R_x = Addr_Des[x], which contains value of `x` at the end of block.
+                rX = None 
+                for location in self._addrDis[x]:
+                    if self.isInRegDis(location):
+                        # location is a register
+                        if x in self._regDis[location]:
+                            rX = location
+                            break
+                if rX:
+                    # Issue `store x, R_x` Instruction.
+                    # genereatedIns.append(Translator.store(x,rX))
+                    genereatedIns.append("sw "+x+", "+rX)
+
+                    # Change the Addr_Des[x] to include it's own memory `x`.
+                    self._addrDis[x].append(x)
+                else:
+                    print "No register contians value of "+x
+
+        return genereatedIns        # return the generated instructions
 
     # Remove a register from free list
     def removeFromFreeRs(self, reg):
