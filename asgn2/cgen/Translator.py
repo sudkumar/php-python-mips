@@ -31,7 +31,7 @@ class Translator():
 				mipsInst = "mult"
 			else:
 				mipsInst = "div"
-		mipsCode = mipsInst + " " + registers[0] + ", " + registers[1] + ", " + registers[2] + "\n"		
+		mipsCode = "\t" +  mipsInst + " " + registers[0] + ", " + registers[1] + ", " + registers[2] + "\n"		
 		return mipsCode
 
 	"""
@@ -50,7 +50,7 @@ class Translator():
 		except Exception, e:
 			if e:
 				mipsInst = "la"
-		mipsCode = mipsInst + " " + registers[0] + ", " + registers[1]
+		mipsCode = "\t" + mipsInst + " " + registers[0] + ", " + registers[1]
 		return mipsCode
 	"""
 		call methods: getInstStore([src,dest])
@@ -61,7 +61,8 @@ class Translator():
 		mipsInst = "sw"
 		src = registers[0]
 		dest = registers[1]
-		return mipsInst
+		mipsCode = "\t" + mipsInst + " "+ src + ", " + dest 
+		return mipsCode
 
 	"""
 		call for conditional branch jump instructions.
@@ -85,7 +86,7 @@ class Translator():
 			elif operands[1] == "!=":
 			 	mipsInst = "bnez"
 			if mipsInst : 
-				mipsCode = mipsInst + " " + operands[0] + ", " + label + "\n" 	
+				mipsCode = "\t" + mipsInst + " " + operands[0] + ", " + label + "\n" 	
 		except Exception, e:
 			if operands[1] == ">":
 			 	mipsInst = "bgt"
@@ -100,7 +101,7 @@ class Translator():
 			elif operands[1] == "!=":
 			 	mipsInst = "bne"
 			if mipsInst:
-				mipsCode = mipsInst + " " + operands[0] + ", "+ operands[2] + ", " + label + "\n" 	 	
+				mipsCode = "\t" + mipsInst + " " + operands[0] + ", "+ operands[2] + ", " + label + "\n" 	 	
 		return mipsCode	
 
 	"""
@@ -115,10 +116,10 @@ class Translator():
 		mipsInst = ""
 		if label != "":
 			mipsInst = "jal"
-			mipsCode = mipsInst + " " + label
+			mipsCode = "\t" + mipsInst + " " + label
 		elif label == "":
 			mipsInst = "jr" 
-			mipsCode = mipsInst + " $ra"
+			mipsCode = "\t" + mipsInst + " $ra"
 		return mipsCode	
 
 
@@ -132,14 +133,14 @@ class Translator():
 	def getInstPrint(self,type, address):
 		mipsCode = ""		 
 		if type == "integer" :
-			mipsCode = "li $v0, 1" + "\n" + "move $a0, " + address + "\n" + "syscall" + "\n"					 
+			mipsCode = "\t" + "li $v0, 1" + "\n\t" + "move $a0, " + address + "\n\t" + "syscall" + "\n"					 
 
 		elif type == "float" :
-			mipsCode = "li $v0, 2" + "\n" + "mov.s $f12, " + address + "\n" + "syscall" + "\n"					 		 
+			mipsCode = "\t" + "li $v0, 2" + "\n\t" + "mov.s $f12, " + address + "\n\t" + "syscall" + "\n"					 		 
 		# elif type == "double" : 
 
 		elif type == "string" :
-			mipsCode = "li $v0, 4" + "\n" + "la $a0, " + address + "\n" + "syscall" + "\n"
+			mipsCode = "\t" + "li $v0, 4" + "\n\t" + "la $a0, " + address + "\n\t" + "syscall" + "\n"
 		
 		return mipsCode
 
@@ -147,7 +148,7 @@ class Translator():
 		Mips code for exit of a program
 	"""	
 	def getInstExit(self):
-		mipsCode = 	"li $v0, 10" + "\n" + "syscall"
+		mipsCode = 	"\t" + "li $v0, 10" + "\n\t" + "syscall"
 		return mipsCode
 
 if __name__ == '__main__':
@@ -180,3 +181,5 @@ if __name__ == '__main__':
 	print translator.getInstPrint('integer', 't2')
 	print translator.getInstPrint('string', 'name')
 	print translator.getInstPrint('float', 'f1')
+
+	print translator.getInstExit()
