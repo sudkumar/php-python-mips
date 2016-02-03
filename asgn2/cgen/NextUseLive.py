@@ -88,7 +88,7 @@ if __name__ == '__main__':
         "2, +, b, a, 2",
         "3, +, a, a, 2",
         "4, =, c, 2",
-        "5, ifgoto, blt, a, c, 3"
+        "5, ifgoto, a, < , c, 3"
     ]
     print NextUseLive(basicBlock)
     
