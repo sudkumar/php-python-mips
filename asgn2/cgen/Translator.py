@@ -124,24 +124,61 @@ class Translator():
 
 
 	"""
-		Take type of print statement and return mips assembly code for it.
-
-		Takes two parameters:
-		(i). type: 'integer', 'float','double', 'string'
-		(ii). address: for string address in data section else register i.e $t0
+		Print functions which return mips assembly code for it.		
 	"""
-	def getInstPrint(self,type, address):
-		mipsCode = ""		 
-		if type == "integer" :
-			mipsCode =  "li $v0, 1" + "\n\t" + "move $a0, " + address + "\n\t" + "syscall" 					 
+	# print function which gives mips code for integers
+	# input: a reg in which value is present
+	def getInstPrintInt(self,variable):
+		mipsCode =  "li $v0, 1" + "\n\t" + "move $a0, " + variable + "\n\t" + "syscall" 					 
+		return mipsCode
 
-		elif type == "float" :
-			mipsCode =  "li $v0, 2" + "\n\t" + "mov.s $f12, " + address + "\n\t" + "syscall"				 		 
-		# elif type == "double" : 
+	# print function which gives mips code for floats  
+	# input: A reg in which value is present
+	def getInstPrintFloat(self,variable):
+		mipsCode =  "li $v0, 2" + "\n\t" + "mov.s $f12, " + variable + "\n\t" + "syscall"					 
+		return mipsCode
 
-		elif type == "string" :
-			mipsCode = "li $v0, 4" + "\n\t" + "la $a0, " + address + "\n\t" + "syscall"
-		
+	# print function which gives mips code for string  
+	# input: an address in data section.
+	def getInstPrintStr(self,address):
+		mipsCode = "li $v0, 4" + "\n\t" + "la $a0, " + address + "\n\t" + "syscall"				 
+		return mipsCode 
+
+	"""
+		Read input functions which return mips assembly code for it.		
+	"""
+
+	# read integers from console
+	# input: an register in which we want to read the input
+	def getInstReadInt(self, reg):
+		mipsCode =  "li $v0, 5" + "\n\t" + "syscall" + "\n\t" + "move " + reg + ", $v0" 					 
+		return mipsCode
+
+	# read floats from console  
+	# input: an register in which we want to read the input
+	# not sure working
+	def getInstReadFloat(self,reg):
+		mipsCode =  "li $v0, 6" + "\n\t" + "syscall" + "\n\t" + "swc1 " + reg + ", $v0" 					 
+		return mipsCode
+
+	# read string from console 
+	# input: an address in data section and amount of size, ex.   getInstReadStr('inputStr',35)
+	# 
+	def getInstReadStr(self,string,size):
+		mipsCode = "li $v0, 8" + "\n\t" + "la $a0, "+ string + "\n\t"
+		mipsCode += "li $a1, "+ str(size) + "\n\t" # if size is integer
+		mipsCode += "syscall"				 
+		return mipsCode 
+
+
+	"""
+		Mips code for allocating memory
+	"""
+	# assuming no of bytes is in a register
+	# address in $v0, amount in $a0
+	def getInstMalloc(self,noOfBytes):
+		mipsCode = "move $a0, "+ str(noOfBytes) + "\n\t"
+		mipsCode += "li $v0, 9" + "\n\t" + "syscall" + "\n\t" 
 		return mipsCode
 
 	"""
@@ -175,11 +212,18 @@ if __name__ == '__main__':
 	print translator.getInstCondJump(['t1','==','0'],'L2')
 	print translator.getInstCondJump(['t1','!=','0'],'L2')
 
-	print translator.getInstUncondJump('L2')
-	print translator.getInstUncondJump('')
+	# print translator.getInstUncondJump('L2')
+	# print translator.getInstUncondJump('')
 
-	print translator.getInstPrint('integer', 't2')
-	print translator.getInstPrint('string', 'name')
-	print translator.getInstPrint('float', 'f1')
+	print translator.getInstPrintInt('$t0')
+	print translator.getInstPrintFloat('$t0')
+	print translator.getInstPrintStr('str_name')
 
+	print translator.getInstReadInt('$t0')
+	print translator.getInstReadFloat('$t0')
+	print translator.getInstReadStr('input_str', 25)
+
+	print translator.getInstMalloc('$t1')
+	
 	print translator.getInstExit()
+
