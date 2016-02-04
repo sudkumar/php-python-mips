@@ -20,39 +20,43 @@
 
         HR                  Instruction type                IR
 
-        a = b               assign                       =, a, b
+        a = b                   assign                       =, a, b
 
-        a = 2               assign                       =, a, 2
+        a = 2                   assign                       =, a, 2
 
-        a = b + c           assign                       +, a, b, c
+        a = b + c               assign                       +, a, b, c
 
-        a = b + 1           assign                       +, a, b, 1
+        a = b + 1               assign                      +, a, b, 1
 
-        a = b - c           assign                       -, a, b, c
+        a = b - c               assign                      -, a, b, c
 
-        a = b * c           assign                       *, a, b, c
+        a = b * c               assign                      *, a, b, c
 
-        a = b / c           assign                      /, a, b, c
+        a = b / c               assign                      /, a, b, c
 
         
 
-        if(a < b){          jump                        ifgoto a, > , b, L1 
+        if(a < b){              jump                    ifgoto a, > , b, L1 
             stmt1                                       stmt1
         }else{                                          goto L2
             stmt2                                       L1: stmt2
             }                                           L2:              
 
-        func()              function call               call, func
+        func()                  function call           call, func
 
-        func(a,b)           function call              param a
+        func(a,b)               function call           param a
                                                        param b
                                                        call, func, 2   // no of params at the end 
 
-        return var          return                      return var
+        return var              return                  return var
  
-        print var           print                       print var     
+        print var               print                   print var     
 
-        read var            read                        read var     
+        read var                read                    read var     
+
+        fread("input","r")      file read           fread fileLabel     
+
+        fwrite("output","w")    file write          fwrite fileLabel     
 
 ## Running Test cases
 

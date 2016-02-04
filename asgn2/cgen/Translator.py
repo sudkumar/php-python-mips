@@ -164,9 +164,9 @@ class Translator():
 	# read string from console 
 	# input: an address in data section and amount of size, ex.   getInstReadStr('inputStr',35)
 	# 
-	def getInstReadStr(self,string,size):
-		mipsCode = "li $v0, 8" + "\n\t" + "la $a0, "+ string + "\n\t"
-		mipsCode += "li $a1, "+ str(size) + "\n\t" # if size is integer
+	def getInstReadStr(self,address,sizeReg):
+		mipsCode = "li $v0, 8" + "\n\t" + "la $a0, "+ address + "\n\t"
+		mipsCode += "move $a1, "+ sizeReg + "\n\t" # if size is integer
 		mipsCode += "syscall"				 
 		return mipsCode 
 
@@ -181,8 +181,95 @@ class Translator():
 		mipsCode += "li $v0, 9" + "\n\t" + "syscall" + "\n\t" 
 		return mipsCode
 
+
 	"""
-		Mips code for exit of a program
+		MIPS library support 	
+
+		suppose we have file name in our data section with same address name i.e
+		.data fInput: .asciiz "filename.ir"
+	"""	
+
+	"""
+		Function to open file for read
+		takes two parameter: 
+		1. filename referenced in data section
+		2. reg: register in which file descriptor will be stored
+	"""
+	def openFileForRead(self,filename,fileDespReg):
+		mipsCode = "\t" + "li $v0, 13" + "\n\t"
+		mipsCode += "la $a0, " + filename + "\n\t"
+		mipsCode += "li $a1, 0" + "\n\t"	# open for reading
+		mipsCode += "li $a2, 0" + "\n\t"	# mode is none
+		mipsCode += "syscall" + "\n\t"
+		mipsCode += "move " + fileDespReg + ", $v0" + "\n" # saving file descriptor
+		return mipsCode
+
+	"""
+		Function to read from file
+		takes 3 parameters:
+		1. register where file descriptor is stored
+		2. buffer name where we will read input
+		3. reg where size of buffer is stored
+
+		strName contains the string, by calling loadByte function we can use each character if we want.
+	"""
+	def readFile(self,fileDespReg,strName,sizeReg):	
+		mipsCode = "\t" + "li $v0, 14" + "\n\t"
+		mipsCode += "move $a0, " + fileDespReg + "\n\t"
+		mipsCode += "la $a1, " + strName + "\n\t"	# address of buffer to which to read
+		mipsCode += "move $a2, " + sizeReg + "\n\t"	# buffer length
+		mipsCode += "syscall" + "\n"	# read from file
+		return mipsCode
+
+	"""
+		Function to open file for write
+		takes filename referenced in data section as parameter and a reg where descriptor will be stored
+	"""
+	def openFileForWrite(self,filename,fileDespReg):
+		mipsCode = "\t" +"li $v0, 13" + "\n\t"
+		mipsCode += "la $a0, " + filename + "\n\t"
+		mipsCode += "li $a1, 1" + "\n\t"	# open for writing
+		mipsCode += "li $a2, 0" + "\n\t"	# mode is none
+		mipsCode += "syscall" + "\n\t"		# file descriptor is in $v0
+		mipsCode += "move " + fileDespReg + ", $v0" + "\n"
+		return mipsCode
+
+ 
+	"""
+		Function to write in file
+		takes 3 parameter:
+		1. register where file descriptor is stored
+		2. buffer name where we will read input
+		3. reg where size of buffer is stored
+		suppose we writing a string which address is in our data section   
+	"""
+	def writeFile(self,fileDespReg,strName,sizeReg ):
+		mipsCode = "\t" + "move $a0, "+fileDespReg + "\n"	# load file descriptor for syscall
+		mipsCode += "li $v0, 15" + "\n\t"	 
+		mipsCode += "la $a1, " + strName + "\n\t"	# address of buffer to which to read
+		mipsCode += "move $a2, " + sizeReg + "\n\t"	# buffer length
+		mipsCode += "syscall" + "\n"	# write to file
+		return mipsCode
+
+
+	"""
+		Function to load a byte from stored string buffer at position index into dest register
+	"""
+	def loadByte(self,destReg,strName,index):
+		mipsCode = "\t" + "lb " + destReg + ", " + strName + "(" + index + ")"
+		return mipsCode
+
+	"""
+		Function to close a file after each operation is done
+	"""	
+	def CloseFile(self,fileDespReg):
+		mipsCode = "\t" + "li $v0, 16" + "\n\t"
+		mipsCode += "move $a0, " + fileDespReg + "\n\t"
+		mipsCode += "syscall" + "\n"
+		return mipsCode
+
+	"""
+		Mips code for exit state of a program
 	"""	
 	def getInstExit(self):
 		mipsCode = 	"\t" + "li $v0, 10" + "\n\t" + "syscall"
@@ -221,9 +308,18 @@ if __name__ == '__main__':
 
 	print translator.getInstReadInt('$t0')
 	print translator.getInstReadFloat('$t0')
-	print translator.getInstReadStr('input_str', 25)
+	print translator.getInstReadStr('input_str', "$t6")
 
 	print translator.getInstMalloc('$t1')
 	
 	print translator.getInstExit()
 
+
+	print translator.openFileForRead("fInput",'$s6')
+	print "\n"
+	print translator.readFile('$s6',"buffer","$t6")	# t6 contains buffer size
+
+	print translator.openFileForWrite("fOut","$t6")
+	print translator.writeFile("$t6","text", "$t6" )	# t6 contains buffer size
+	print "\n"	
+	print translator.CloseFile("$t6")
