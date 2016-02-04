@@ -16,9 +16,12 @@ class TAC():
         
 class IR():
     """Intermediate Representation controller"""
-    def __init__(self):
+    def __init__(self, inputFile):
         self._tac = []
         self._st = SymbolTable()
+        with open(inputFile, "r") as f:
+            for line in f:
+                self.parseLine(line)
         
     def parseLine(self, irLine):
         # split the line and get the parts
@@ -172,12 +175,7 @@ class IR():
             # update the tac
             tac._src1ST = src1ST
 
-
         self._tac.append(tac)
 
-
 if __name__ == '__main__':
-    ir = IR()
-    with open('sample_input.ir', "r") as f:
-        for line in f:
-            ir.parseLine(line)
+    ir = IR('sample_input.ir')

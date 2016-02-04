@@ -127,7 +127,7 @@ class CodeGen():
                 elif parsedIns.type == "print":
                     arg = parsedIns.printArgs
                     allocatedRs = self.regForOperands([arg], nextUse)
-                    self._newBlockIns.append(self._tr.getInstPrint("integer", allocatedRs[arg]))
+                    self._newBlockIns.append(self._tr.getInstPrintInt(allocatedRs[arg]))
 
                 else:
                     self._newBlockIns.append(ins)
