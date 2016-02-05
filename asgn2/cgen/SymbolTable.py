@@ -27,13 +27,14 @@ class SymbolTable():
         # create attributes for this lexeme and add them to table
         attrs = {"token":tkn}
         if tkn == "INT":
-            attrs["typ"] = "const_int"
+            attrs["type"] = "const_int"
             attrs["val"] = int(lxm)
         elif tkn == "STRING":
-            attrs["typ"] = "const_str"
+            attrs["type"] = "const_str"
             attrs["val"] = lxm
         else:
-            attrs["typ"] = "variable"    
+            attrs["type"] = "variable"
+            attrs["name"] = lxm    
         self._table.append(attrs)
         # increment the length of table
         self._len += 1  

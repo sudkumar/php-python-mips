@@ -2,11 +2,9 @@
 
 from BBGen import BBGen     # Get the basic block generator
 
-from LineParser import LineParser   # Get the line parser
+from IR import IR   # Get the line parser
 
-from Config import IRInstructionTypes
-from Config import JumpInstructions
-
+from Config import *
 
 class Node():
     """A Node in Flow Grpth"""
@@ -30,13 +28,10 @@ class FlowGraph():
         ir {string} -- An string consisting of Intermediate Representation of code.
     """
 
-    def __init__(self, ir):
+    def __init__(self, tac):
 
         # Generate the basic blocks
-        bbs = BBGen(ir)
-        leaders = bbs._leaders
-        countLeaders = len(leaders)
-        ir = bbs._ir
+        bbs = BBGen(tac)
 
         # get the functions dictionary
         self._fns = bbs._fns
@@ -45,14 +40,14 @@ class FlowGraph():
         self._blockNodes = []
 
         # add block nodes
-        self.addNodes(ir, leaders)
+        self.addNodes(tac, bbs._leaders)
 
         # add the links between nodes
-        self.addLinks(leaders)
+        self.addLinks(bbs._leaders)
 
 
 
-    def addNodes(self, ir, leaders):
+    def addNodes(self, tac, leaders):
         # add the entry node
         self._blockNodes.append(Node("entry"))
         # create node for every leader
@@ -60,9 +55,9 @@ class FlowGraph():
         for i in range(countLeaders):
             # create a new node with content of current block
             if i < countLeaders-1 :
-                node = Node(ir[leaders[i]-1:(leaders[i+1]-1)])   # still a leader is remaining
+                node = Node(tac[leaders[i]-1:(leaders[i+1]-1)])   # still a leader is remaining
             else:       
-                node = Node(ir[leaders[i]-1:])          # this is the last leader
+                node = Node(tac[leaders[i]-1:])          # this is the last leader
 
             self._blockNodes.append(node)
 
@@ -81,15 +76,11 @@ class FlowGraph():
                 continue    
 
             # get the last instruction
-            lastInst = nodes[i]._block[-1]
+            ltac = nodes[i]._block[-1]
 
-            # parse the last instruction
-            parsedLine = LineParser(lastInst)
-
-
-            if parsedLine.type in JumpInstructions:
+            if ltac.type in JumpInstructions:
                 # it's a jump instruction, so get the target `leader` and add that to my successor  
-                jumpTarget = parsedLine.jumpTarget
+                jumpTarget = ltac.target
                 try:
                     jumpTargetInt = int(jumpTarget)
                 except ValueError, e:
@@ -97,16 +88,15 @@ class FlowGraph():
                     # It's a function label, so get it from bbs
                     jumpTargetInt = self._fns[jumpTarget]
                     # update the functions dictionary to point to a block node
-                    
                     self._fns[jumpTarget] = "B"+str(leaders.index(jumpTargetInt)+1)
                 finally:
                     # append the node
                     nodes[i].addSucc(nodes[leaders.index(jumpTargetInt)])
                     # update the target to point to the successor instead of line number   
-                    nodes[i]._block[-1] = parsedLine.updateJumpTarget("B"+str(leaders.index(jumpTargetInt)+1))
+                    ltac.updateTarget("B"+str(leaders.index(jumpTargetInt)+1))
 
                 # check if it a conditional jump instructions
-                if parsedLine.type == IRInstructionTypes["ifgoto"]:
+                if ltac.type == InstrType.cjump:
                     # the next `leader` is my successor
                     if i < countLeaders-1:
                         nodes[i].addSucc(nodes[i+1])
@@ -127,11 +117,16 @@ class FlowGraph():
         self._blockNodes = nodes
 
 if __name__ == '__main__':
-    fp = open("sample_input3.ir", "r")
-    lines = fp.read()
-    fp.close()
-    fg = FlowGraph(lines)
+    ir = IR("sample_input3.ir")
+    fg = FlowGraph(ir.tac)
     print fg._fns
+    i = 0
+    blocs = len(fg._blockNodes)
     for blockNode in fg._blockNodes:
-        print blockNode._block
-
+        if i == 0 or i == blocs-1:
+            i += 1
+            continue
+        for t in blockNode._block:
+            print t._ln
+        print "===================="    
+        i += 1
