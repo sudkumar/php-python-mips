@@ -6,8 +6,9 @@ from NextUseLive import NextUseLive
 
 from LineParser import LineParser
 
-
 from Translator import Translator
+
+from Config import *
 
 """Code Generator
 
@@ -32,9 +33,8 @@ class CodeGen():
         self._tr = Translator()
 
         # a set of empty registers
-        self._freeRs = []
-        for reg in self._regDis:
-            self._freeRs.append(reg)
+        self._freeRs = AvalRegs
+        
 
         self._globalVars = {}
         self._newBlockIns = []
@@ -195,12 +195,7 @@ class CodeGen():
                     # Change the Addr_Des[src] by adding `R_src` as an additional location.
                     self._addrDis[src].append(rSrc)         
 
-        # handle the same src case, as mips wont allow that
-        # if (srcs[0] == srcs[1]):
-        #     newReg = self.regForIntConst(nextUse, '0', allocatedRs)
-        #     self._newBlockIns.append("move "+newReg+", "+allocatedRs[srcs[0]])
-        #     self._newBlockIns.append(self._tr.getInstOp(parsedIns._op, [rDest, newReg, allocatedRs[srcs[1]]] ))
-        # else:
+
         self._newBlockIns.append(self._tr.getInstOp(parsedIns._op, map(lambda x: allocatedRs[x], operands)))
 
         # Issue The Instruction `op R_dest, R_src1, R_src2`
