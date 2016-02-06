@@ -1,5 +1,0 @@
-1, =, a, 5
-2, call, foo
-3, label, foo
-4, =, b, a
-5, return, b

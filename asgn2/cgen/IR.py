@@ -133,7 +133,7 @@ class IR():
             # look into the symbol table for this lexeme
             src1ST = self._st.lookup(src1)
             if src1ST == None:
-                if not IsInt(src1):
+                if IsInt(src1):
                     src1ST = self._st.insert(src1, "INT")
                 else:    
                     print "IR:137:: "+src1 +" not declared in"
@@ -142,25 +142,19 @@ class IR():
             tac._src1ST = src1ST
 
         elif instrType == InstrType.call:
-            # get the number of params
+            # get the return val
             if len(irParts) >= 4:
-                src1 = irParts[3]
-            else:
-                # pass zero argument
-                src1 = "0"
-            # look into the symbol table for this lexeme
-            src1ST = self._st.lookup(src1)
-            if src1ST == None:
-                if IsInt(src1):
-                    src1ST = self._st.insert(src1, "INT")
-                else:
-                    print src1 +" not declared in"
-                    print irLine 
+                dest = irParts[3]
+                # look into the symbol table for this lexeme
+                destST = self._st.lookup(dest)
+                if destST == None:
+                    destST = self._st.insert(dest, "ID")
+
             # get the target label
             target = irParts[2]
 
             # update the tac
-            tac._src1ST = src1ST
+            tac._destST = destST
             tac._target = target
 
         elif instrType == InstrType.ret:
@@ -178,9 +172,26 @@ class IR():
             # update the tac
             tac._src1ST = src1ST
 
+        elif instrType == InstrType.libFn:
+            # get the return val
+            if len(irParts) >= 3:
+                dest = irParts[2]
+                # look into the symbol table for this lexeme
+                destST = self._st.lookup(dest)
+                if destST == None:
+                    destST = self._st.insert(dest, "ID")
+
+            # get the target label
+            target = irParts[1]
+
+            # update the tac
+            tac._destST = destST
+            tac._target = target
+            tac._typ = InstrType.libFn
+
         self._tac.append(tac)
 
 if __name__ == '__main__':
-    ir = IR('sample_input3.ir')
+    ir = IR('./../test/sample_input3.ir')
     for tac in ir._tac:
-        print tac.lineNumber, tac.operator, tac.target
+        print tac.lineNumber, tac.operator, tac.src

@@ -18,37 +18,59 @@ class InstrType(Enum):
     ret     = 10        # the return instruction
 
 Operators = {
-    "="         : InstrType.copy,
-    "+"         : InstrType.assgn,
-    "-"         : InstrType.assgn,
-    "*"         : InstrType.assgn,
-    "\\"        : InstrType.assgn,
-    "label"     : InstrType.label,
-    "goto"      : InstrType.ujump,
-    "ifgoto"    : InstrType.cjump,
-    "params"    : InstrType.params,
-    "call"      : InstrType.call,
-    "return"       : InstrType.ret,
-    "printInt"  : InstrType.libFn,
-    "printFloat": InstrType.libFn,
-    "printDouble" : InstrType.libFn,
-    "printStr"  : InstrType.libFn,
-    "readInt"   : InstrType.libFn,
-    "readFloat" : InstrType.libFn,
-    "readDouble": InstrType.libFn,
-    "readStr"   : InstrType.libFn,
-    "malloc"    : InstrType.libFn
+    "="             : InstrType.copy,
+    "+"             : InstrType.assgn,
+    "-"             : InstrType.assgn,
+    "*"             : InstrType.assgn,
+    "\\"            : InstrType.assgn,
+    "label"         : InstrType.label,
+    "goto"          : InstrType.ujump,
+    "ifgoto"        : InstrType.cjump,
+    "params"        : InstrType.params,
+    "call"          : InstrType.call,
+    "return"        : InstrType.ret,
+    "printInt"      : InstrType.libFn,
+    "printFloat"    : InstrType.libFn,
+    "printDouble"   : InstrType.libFn,
+    "printStr"      : InstrType.libFn,
+    "readInt"       : InstrType.libFn,
+    "readFloat"     : InstrType.libFn,
+    "readDouble"    : InstrType.libFn,
+    "readStr"       : InstrType.libFn,
+    "malloc"        : InstrType.libFn,
+    "exit"          : InstrType.libFn
+}
+
+
+LibFns = {
+    "printInt"  :     "_printInt_",
+    "printStr"  :     "_printStr_",
+    "readInt"   :     "_readInt_",
+    "readStr"   :     "_readStr_",
+    "malloc"    :     "_malloc_",
+    "exit"      :     "_exit_"
 }
 
 JumpInstructions = [InstrType.ujump, InstrType.cjump, InstrType.call]      
 
 # Available register
-TempRegs = ["$t0","$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"]
+TempRegs = ["$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"]
 SavedRegs = ["$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7"]
 # AvalRegs = ["$t0", "$t1", "$t2", "$t3"]
 AvalRegs = TempRegs + SavedRegs
 
-
+OperatorMap = {
+    "+"     : "add",
+    "-"     : "sub",
+    "*"     : "mul",
+    "/"     : "div",
+    ">"     : "bgt",
+    ">="    : "bge",
+    "<"     : "blt",
+    "<="    : "ble",
+    "=="    : "beq",
+    "!="    : "bne"
+}
 # Checks whether a val is integer or not        
 def IsInt(val):
     try:

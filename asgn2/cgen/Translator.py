@@ -70,7 +70,7 @@ class Translator():
 
 		Note: no mips instruction for ($t1 >= 0) and ($t1 < 0)
 	"""	
-	# caall method: translator.getInstCondJump(['t1','<','t2'],'L1')		
+	# call method: translator.getInstCondJump(['t1','<','t2'],'L1')		
 	def getInstCondJump(self, operands ,label):
 		mipsInst = ""
 		mipsCode = ""
@@ -101,7 +101,7 @@ class Translator():
 			elif operands[1] == "!=":
 			 	mipsInst = "bne"
 			if mipsInst:
-				mipsCode = mipsInst + " " + operands[0] + ", "+ operands[2] + ", " + label 	 	
+				mipsCode = mipsInst + " " + operands[0] + ", "+ operands[2] + ", " + label
 		return mipsCode	
 
 	"""

@@ -1,19 +1,15 @@
 #!/usr/bin/ python
 
 from FlowGraph import FlowGraph
-
 from NextUseLive import NextUseLive
-
 from IR import IR
 
 # from Translator import Translator
-
 from Config import *
-
 from AddrDis import AddrDis
 from RegDis import RegDis
 from alloc import RegAlloc
-
+from Lib import *
 
 """Code Generator
 
@@ -72,7 +68,9 @@ class CodeGen():
             i = 0
             self._newBlockIns = []
             jumpIns = []
-            for tac in blockIns:
+            countBlock = len(blockIns)
+            while i < countBlock:
+                tac = blockIns[i]
                 self._toFreeRs = []
                 # get the next use info about the current line
                 nextUse = nextUseLiveST[i+1]
@@ -89,31 +87,15 @@ class CodeGen():
 
                 # else if `Ins` isOfType "cond_jump"
                 elif tac.type == InstrType.cjump:
-                    srcs = tac.srcs
-                    # get registers for all variabels
-                    allocatedRs = {}
-                    for src in srcs:
-                        rSrc = self._regAlloc.getReg(src, tac, nextUse, allocatedRs)
-                        allocatedRs[src] = rSrc
-                        attrs = self._st.getAttrs(src)
-                        if attrs["type"] == "const_int":
-                            # generate a li instruction
-                            self.genLiInstr(rSrc, src)
-
-                    newExp = [allocatedRs[srcs[0]], tac.operator ,allocatedRs[srcs[1]]]
-                    self._newBlockIns.append("ifgoto "+ ", ".join(newExp)+", "+str(tac.target))
+                    self.handleCondJump(tac, nextUse)
 
                 # else if `Ins` is of type "uncond_jump"
                 elif tac.type == InstrType.ujump:
                     jumpIns.append("j "+str(tac.target))
 
                 # else if `Ins` is of type "func_call"    
-                elif tac.type == InstrType.call:
-                    jumpIns.append("addi $sp, -4")
-                    jumpIns.append("sw $ra, 0($sp)")
-                    jumpIns.append("jal "+tac.target)
-                    jumpIns.append("lw $ra, 0($sp)")
-                    jumpIns.append("addi $sp, 4")
+                elif tac.type == InstrType.call or tac.type == InstrType.libFn:
+                    jumpIns += self.handleFnsCalls(tac, nextUse)
 
                 # else if `Ins` is of type "func_label"
                 elif tac.type == InstrType.label:
@@ -121,37 +103,52 @@ class CodeGen():
                     x = 1
                 # the return type
                 elif tac.type == InstrType.ret:
-                    src = tac.src
-                    attrs = self._st.getAttrs(src)
-                    if attrs["type"] == "const_int":
-                        jumpIns.append("li $v0, "+str(attrs["val"]))
-                    else:     
-                        allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
-                        jumpIns.append("move $v"+str(i)+", "+allocatedR)
-                    # add the load for return value
-                    jumpIns.append("jr $ra")
+                   jumpIns += self.handleReturns(tac, nextUse)
 
+                # Handle the parametes, Handle the parameters right here as
+                # we need other parameters here too     
+                elif tac.type == InstrType.params:
+                    # get all the parameters
+                    # do a loop and get all the parameters
+                    allocatedRs = {}
+                    i = 0
+                    while tac.type == InstrType.params:
+                        param = tac.src
+                        attrs = self._st.getAttrs(param)
+                        if attrs["type"] == "const_int":
+                            self._newBlockIns.append("li $a"+str(i)+", "+str(attrs["val"]))
+                        else:
+                            rParam = self._regAlloc.getReg(param, tac, nextUse, allocatedRs)
+                            allocatedRs[param] = rParam
+                            self._regAlloc.removeFromFree(rParam)
+                            self._newBlockIns.append("move $a"+str(i)+", "+str(rParam))
 
-                # elif tac.type == InstrType.libFn:
-                #     arg = parsedIns.printArgs
-                #     allocatedRs = self.regForOperands([arg], nextUse)
-                #     self._newBlockIns.append(self._tr.getInstPrintInt(allocatedRs[arg]))
+                            # If src=Ins.srcOperand is not in 'Register':
+                            # get it from memory and store in the register
+                            self.lwInR(param, rParam)
+
+                            # # Change the Addr_Des[dest] so that it holds only location `R_dest`.
+                            # self._addrDis.setR(param, rParam)
+                        if i < countBlock-1:
+                            i += 1
+                            nextUse = nextUseLiveST[i+1]
+                            tac = blockIns[i]
+                        else:
+                            break
+                    continue
 
                 else:
                     print "code:142:: Unhandled instruction at "+tac.lineNumber
-                    self._newBlockIns.append(tac)
+                    self._newBlockIns.append("tac")
                 
                 # For register to be free, Free them
                 self._regAlloc.addToFree(self._toFreeRs)
-                # print nextUse
                 i += 1
-
             # we done with the block, now time to restore the lost values 
             self.restoreAtEnd(nonTempVars)
             self._newBlockIns += jumpIns
             ##### End of for loop for this block
             self._codeBlocks.append(self._newBlockIns)
-
 
         # self._flowGraph = flowGraph
 
@@ -181,15 +178,9 @@ class CodeGen():
                 allocatedRs[src] = rSrc
                 self._regAlloc.removeFromFree(rSrc)     # remove from free list
                 # if `src` not in 'Register' (according to Reg_Des for R_src):
-                if not src in self._regDis.fetchVar(rSrc): 
-                    # Issue `load R_src, src` Instruction.
-                    self._newBlockIns.append("lw "+str(rSrc)+", "+str(src))
-                    
-                    # Change the Reg_Des[R_src] so it holds only `src`.
-                    self._regDis.setVar(rSrc, src)
-                    
-                    # Change the Addr_Des[src] by adding `R_src` as an additional location.
-                    self._addrDis.appendR(src, rSrc)
+                # get it from memory and store it in a register
+                self.lwInR(src, rSrc)
+
             else: 
                 intVal = attrs["val"]
                 # check if the source is already alloted. This will be case 
@@ -247,6 +238,7 @@ class CodeGen():
                 self._regAlloc.removeFromFree(rDest)        # remove from free registers
 
         # create instruction for addi if operator is "+" and srcs are int
+        # Issue The Instruction `op R_dest, R_src1, R_src2`
         if srcInt and  tac.operator == "+":
             consts = None
             regs = []
@@ -264,20 +256,12 @@ class CodeGen():
             else:
                 self._newBlockIns.append("addi " +  ', '.join(regs))    
         else:
-            self._newBlockIns.append(tac.operator+ " " + ', '.join(map(lambda x: str(allocatedRs[x]), operands)))
+            self._newBlockIns.append(OperatorMap[tac.operator]+ " " + ', '.join(map(lambda x: str(allocatedRs[x]), operands)))
 
-        # Issue The Instruction `op R_dest, R_src1, R_src2`
-        # genereatedIns.append(parsedIns._op+" "+ ', '.join(map(lambda x: allocatedRs[x], operands)))
         rDest = allocatedRs[dest]
-        # Change the Reg_Des[R_dest] so that it holds only `dest`.
-        self._regDis.setVar(rDest, dest)
-        
-        # Change the Addr_Des[dest] so that it holds only location `R_dest`. We removed any memory location of `dest`
-        #  which was in Addr_Des[dest] and We'll add it at the end of block. NO WORRIES!!!.
-        self._addrDis.setR(dest, rDest)
 
-        # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
-        self._addrDis.removeR(rDest, dest)
+        # update the resigster and address discriptor of destination
+        self.updateRegAddrOfDest(dest, rDest)
 
     
 
@@ -286,27 +270,19 @@ class CodeGen():
         src = tac.src  
         # Get Registers for all operands (using GetReg(Ins) method). Say R_dest = R_src. 
         attrs = self._st.getAttrs(src)
-        isSrcInt = attrs["type"] == "const_int"
-        if not isSrcInt:
+        srcInt = attrs["type"] == "const_int"
+        if not srcInt:
             # pick the R_src as above.
             rSrc = self._regAlloc.getReg(src, tac, nextUse, {})
             self.storeSpilled(rSrc)
+            # Both allocated must be same
             # set R_dest = R_src
             rDest = rSrc
             self._regAlloc.removeFromFree(rDest)    # now remove from free registers
 
-            # Both allocated must be same
             # If src=Ins.srcOperand is not in 'Register':
-            if not src in self._regDis.fetchVar(rSrc):
-                # Issue `load R_src, src` Instruction.
-                # self._newBlockIns.append(Translator.load(allocatedRs[src], src))
-                self._newBlockIns.append("lw "+str(rSrc)+", g_"+str(src))
-                
-                # Change the Reg_Des[R_src] so it holds only `src`.
-                self._regDis.setVar(rSrc, src)
-
-                # Change the Addr_Des[src] by adding `R_src` as an additional location.
-                self._addrDis.appendR(src, rSrc)
+            # get it from memory and store in the register
+            self.lwInR(src, rSrc)
 
         else:
             # make a fake register for interger and assign that to it.
@@ -316,13 +292,87 @@ class CodeGen():
             # Now generate the li instruction
             self.genLiInstr(rDest, src)
 
-        
-        # Adjust the Reg_Des[R_src] to include `dest`.
-        self._regDis.appendVar(rDest, dest)
+        if not srcInt:
+            # Adjust the Reg_Des[R_src] to include `dest`.
+            self._regDis.appendVar(rSrc, dest)
+        else:
+            # add the dest at the a location in Reg_Des[R-Dest]
+            self._regDis.appendVar(rDest, dest)
 
         # Change the Addr_Des[dest] so that it holds only location `R_dest`.
         self._addrDis.setR(dest, rDest)
 
+
+    # Handle the function call
+    def handleFnsCalls(self, tac, nextUse):
+
+        jumpIns = []
+
+        if tac.target != "exit":
+
+            jumpIns.append("addi $sp, -4")
+            jumpIns.append("sw $ra, 0($sp)")
+
+            if tac.type == InstrType.call:
+                jumpIns.append("jal "+tac.target)
+            else:
+                jumpIns.append("jal "+LibFns[tac.target])
+                
+            jumpIns.append("lw $ra, 0($sp)")
+            jumpIns.append("addi $sp, 4")
+            # get the return register
+            dest = tac.dest
+            # check if we want to store the return value
+            if dest != None:
+                allocatedR = self._regAlloc.getReg(dest, tac, nextUse, {})
+                self._regAlloc.removeFromFree(allocatedR)     # remove from free list
+                jumpIns.append("move "+ str(allocatedR) +", $v0")
+                # update the discriptor of destination and allocated R
+                self.updateRegAddrOfDest(dest, allocatedR)
+            
+        else:
+            jumpIns.append("j "+LibFns[tac.target])
+
+        return jumpIns
+
+    # Handle return type of instructions
+    def handleReturns(self, tac, nextUse):
+        jumpIns = []
+        # get the value to return
+        src = tac.src
+        attrs = self._st.getAttrs(src)
+        if attrs["type"] == "const_int":
+            jumpIns.append("li $v0, "+str(attrs["val"]))
+        else:     
+            allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
+            self._regAlloc.removeFromFree(allocatedR)     # remove from free list
+            jumpIns.append("move $v0, "+allocatedR)
+            # If src=Ins.srcOperand is not in 'Register':
+            # get it from memory and store in the register
+            self.lwInR(src, allocatedR)
+
+        # add the load for return value
+        jumpIns.append("jr $ra")        
+
+        return jumpIns
+
+
+    # Handle the conditional jump instructions
+    def handleCondJump(self, tac, nextUse):
+        srcs = tac.srcs
+        # get registers for all variabels
+        allocatedRs = {}
+        for src in srcs:
+            rSrc = self._regAlloc.getReg(src, tac, nextUse, allocatedRs)
+            allocatedRs[src] = rSrc
+            self._regAlloc.removeFromFree(rSrc)     # remove from free list
+            attrs = self._st.getAttrs(src)
+            if attrs["type"] == "const_int":
+                # generate a li instruction
+                self.genLiInstr(rSrc, src)
+
+        newExp = [allocatedRs[srcs[0]], allocatedRs[srcs[1]]]
+        self._newBlockIns.append(OperatorMap[tac.operator]+" "+", ".join(newExp)+", "+str(tac.target))
 
 
     # Restore the variables at the end block which are needed. 
@@ -344,7 +394,7 @@ class CodeGen():
                     # genereatedIns.append(Translator.store(x,rX))
                     self._newBlockIns.append("sw "+str(rX)+", g_"+str(x))
                     # Change the Addr_Des[x] to include it's own memory `x`.
-                    self._addrDis.setR(x, x)
+                    self._addrDis.appendR(x, x)
                 else:
                     print "code:351::"
                     print self._regDis.registers
@@ -362,6 +412,7 @@ class CodeGen():
                 # update the address discriptor for these variables, add there own location
                 self._addrDis.appendR(var, var)
 
+
     # Generate instruction for tmp assigned register to integers
     def genLiInstr(self, reg, val):
         self._regAlloc.removeFromFree(reg)        # remove the register from free list
@@ -370,21 +421,55 @@ class CodeGen():
         self._newBlockIns.append("li "+str(reg)+", "+str(attrs["val"]))
         self._toFreeRs.append(reg)
 
+
+    # Load from memory and store in a register
+    def lwInR(self, src, rSrc):
+        # if `src` not in 'Register' (according to Reg_Des for R_src):
+        if not src in self._regDis.fetchVar(rSrc):
+            # Issue `load R_src, src` Instruction.
+            # self._newBlockIns.append(Translator.load(allocatedRs[src], src))
+            self._newBlockIns.append("lw "+str(rSrc)+", g_"+str(src))
+            
+            # Change the Reg_Des[R_src] so it holds only `src`.
+            self._regDis.setVar(rSrc, src)
+
+            # Change the Addr_Des[src] by adding `R_src` as an additional location.
+            self._addrDis.appendR(src, rSrc)
+
+    # Update the destination's register and address discriptors after assignment
+    def updateRegAddrOfDest(self, dest, rDest):
+        # Change the Reg_Des[R_dest] so that it holds only `dest`.
+        self._regDis.setVar(rDest, dest)
+        
+        # Change the Addr_Des[dest] so that it holds only location `R_dest`. We removed any memory location of `dest`
+        #  which was in Addr_Des[dest] and We'll add it at the end of block. NO WORRIES!!!.
+        self._addrDis.setR(dest, rDest)
+
+        # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
+        self._addrDis.removeR(rDest, dest)
+
 if __name__ == '__main__':
-    ir = IR("sample_input.ir")
+    ir = IR("./../test/sample_input.ir")
     code = CodeGen(ir)
     print "\t.data"
     for var in code._globalVars:
         print "g_"+str(var) + ":\t.word\t0"
     print "\t.text"
-    print "\t.global B1"
+    print "\t.global B1\n"
     codeBlocks = code._codeBlocks
+    # add the library functions
+    lib = Lib()
+    instrs = lib.genFns()
+    for ins in instrs.keys():
+       print str(ins)+":"
+       print "\t"+"\n\t".join(instrs[ins])
+
+    print "\n"
+    # Now add the generated block by code generator
     i = 1
     for node in codeBlocks:   
         print "B"+str(i)+":"
         print "\t"+"\n\t".join(node)
         i += 1
 
-    print "exit:"
-    print "\tli, $v0, 10"
-    print "\tsyscall"
+    print "\tj "+LibFns["exit"]
