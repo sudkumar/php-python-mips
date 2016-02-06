@@ -308,30 +308,37 @@ class CodeGen():
 
         jumpIns = []
 
+        insrts = []
+
         if tac.target != "exit":
 
-            jumpIns.append("addi $sp, -4")
-            jumpIns.append("sw $ra, 0($sp)")
+            insrts.append("addi $sp, -4")
+            insrts.append("sw $ra, 0($sp)")
 
             if tac.type == InstrType.call:
-                jumpIns.append("jal "+tac.target)
+                insrts.append("jal "+tac.target)
             else:
-                jumpIns.append("jal "+LibFns[tac.target])
+                insrts.append("jal "+LibFns[tac.target])
                 
-            jumpIns.append("lw $ra, 0($sp)")
-            jumpIns.append("addi $sp, 4")
+            insrts.append("lw $ra, 0($sp)")
+            insrts.append("addi $sp, 4")
             # get the return register
             dest = tac.dest
             # check if we want to store the return value
             if dest != None:
                 allocatedR = self._regAlloc.getReg(dest, tac, nextUse, {})
                 self._regAlloc.removeFromFree(allocatedR)     # remove from free list
-                jumpIns.append("move "+ str(allocatedR) +", $v0")
+                insrts.append("move "+ str(allocatedR) +", $v0")
                 # update the discriptor of destination and allocated R
                 self.updateRegAddrOfDest(dest, allocatedR)
             
         else:
-            jumpIns.append("j "+LibFns[tac.target])
+            insrts.append("j "+LibFns[tac.target])
+
+        if tac.type == InstrType.call:
+            jumpIns = insrts 
+        else:
+            self._newBlockIns += insrts
 
         return jumpIns
 
@@ -449,7 +456,7 @@ class CodeGen():
         self._addrDis.removeR(rDest, dest)
 
 if __name__ == '__main__':
-    ir = IR("./../test/sample_input.ir")
+    ir = IR("./../test/sample_input3.ir")
     code = CodeGen(ir)
     print "\t.data"
     for var in code._globalVars:
