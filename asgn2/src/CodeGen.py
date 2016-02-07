@@ -226,7 +226,7 @@ class CodeGen():
                         if self._regDis.isIn(location):
                             # a register location
                             # Now check if R_src holds only src. if so, return it
-                            if regDis.isOnlyVar(location, src):
+                            if self._regDis.isOnlyVar(location, src):
                                 allocatedRs[dest] = location
                                 self._regAlloc.removeFromFree(location)     # remove the location (register) from free list
                                 found = True
