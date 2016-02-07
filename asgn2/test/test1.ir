@@ -1,9 +1,14 @@
-1, =, a, 2
-2, =, b, 7
-3, +, a, a, b
-4, ifgoto, leq, a, 50, 2
-5, call, foo
-6, ret
-7, label, foo
-8, print, a
-9, ret
+1, readInt, a
+2, readInt, b
+3, ifgoto, a, >=, b, 7
+4, =, t, a
+5, =, a, b
+6, =, b, t
+7, ifgoto, b, <=, 0, 12 
+8, %, r, a, b
+9, =, a, b
+10, =, b, r
+11, goto, 7
+12, params, a
+13, printInt
+14, exit

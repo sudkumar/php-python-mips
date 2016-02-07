@@ -1,4 +1,4 @@
-#!/usr/bin/ python
+#!/usr/bin/python
 
 from BBGen import BBGen     # Get the basic block generator
 

@@ -1,10 +1,10 @@
-#!/usr/bin/ python
+#!/usr/bin/python
 
 from IR import IR
 
 from FlowGraph import FlowGraph
 
-from config import *
+from Config import *
 
 """Get the Next-Use and Liveness information for a Basic Block
 Given a Basic Block, our aim is to attach the information about Next-Use and Liveness for each statement line in that 

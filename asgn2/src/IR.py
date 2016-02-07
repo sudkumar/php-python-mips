@@ -192,6 +192,6 @@ class IR():
         self._tac.append(tac)
 
 if __name__ == '__main__':
-    ir = IR('./../test/sample_input3.ir')
+    ir = IR('./../test/gcd.ir')
     for tac in ir._tac:
-        print tac.lineNumber, tac.operator, tac.src
+        print tac.lineNumber, tac.operator, tac.target

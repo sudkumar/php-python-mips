@@ -1,4 +1,4 @@
-#!/usr/bin/ python
+#!/usr/bin/python
 
 from IR import IR
 
@@ -83,7 +83,7 @@ class BBGen():
 
 
 if __name__ == '__main__':
-    ir = IR("sample_input3.ir")
+    ir = IR("./../test/gcd.ir")
     tac = ir.tac
     bbGen = BBGen(tac)
     print bbGen._leaders

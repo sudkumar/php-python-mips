@@ -1,4 +1,6 @@
-#!/usr/bin/ python
+#!/usr/bin/python
+
+import sys
 
 from FlowGraph import FlowGraph
 from NextUseLive import NextUseLive
@@ -8,7 +10,7 @@ from IR import IR
 from Config import *
 from AddrDis import AddrDis
 from RegDis import RegDis
-from alloc import RegAlloc
+from RegAlloc import RegAlloc
 from Lib import *
 
 """Code Generator
@@ -87,7 +89,7 @@ class CodeGen():
 
                 # else if `Ins` isOfType "cond_jump"
                 elif tac.type == InstrType.cjump:
-                    self.handleCondJump(tac, nextUse)
+                    jumpIns += self.handleCondJump(tac, nextUse)
 
                 # else if `Ins` is of type "uncond_jump"
                 elif tac.type == InstrType.ujump:
@@ -99,8 +101,8 @@ class CodeGen():
 
                 # else if `Ins` is of type "func_label"
                 elif tac.type == InstrType.label:
-                    # self._newBlockIns.append(""+parsedIns.operands[0])
-                    x = 1
+                    self._newBlockIns.append("addi $sp, $sp, -4")
+                    self._newBlockIns.append("sw $ra, 0($sp)")
                 # the return type
                 elif tac.type == InstrType.ret:
                    jumpIns += self.handleReturns(tac, nextUse)
@@ -111,21 +113,22 @@ class CodeGen():
                     # get all the parameters
                     # do a loop and get all the parameters
                     allocatedRs = {}
-                    i = 0
+                    j = 0
                     while tac.type == InstrType.params:
                         param = tac.src
                         attrs = self._st.getAttrs(param)
                         if attrs["type"] == "const_int":
-                            self._newBlockIns.append("li $a"+str(i)+", "+str(attrs["val"]))
+                            self._newBlockIns.append("li $a"+str(j)+", "+str(attrs["val"]))
                         else:
                             rParam = self._regAlloc.getReg(param, tac, nextUse, allocatedRs)
                             allocatedRs[param] = rParam
                             self._regAlloc.removeFromFree(rParam)
-                            self._newBlockIns.append("move $a"+str(i)+", "+str(rParam))
-
                             # If src=Ins.srcOperand is not in 'Register':
                             # get it from memory and store in the register
                             self.lwInR(param, rParam)
+
+                            self._newBlockIns.append("move $a"+str(j)+", "+str(rParam))
+
 
                             # # Change the Addr_Des[dest] so that it holds only location `R_dest`.
                             # self._addrDis.setR(param, rParam)
@@ -135,6 +138,7 @@ class CodeGen():
                             tac = blockIns[i]
                         else:
                             break
+                        j += 1
                     continue
 
                 else:
@@ -149,7 +153,7 @@ class CodeGen():
             self._newBlockIns += jumpIns
             ##### End of for loop for this block
             self._codeBlocks.append(self._newBlockIns)
-
+            self._regAlloc.addToFree(self._toFreeRs)
         # self._flowGraph = flowGraph
 
     # Handler for operation type instructions
@@ -197,7 +201,8 @@ class CodeGen():
                     # to for a load or change in addr and register discriptor tables. else
                     # load that contant
                     self.genLiInstr(rSrc, src)
-
+                    # set the register to be free after execution of this instruction
+                    self._toFreeRs.append(rSrc)
 
         ## selection of registers for destination:
         # issues are the same as for srcs, just a minor differences
@@ -312,33 +317,36 @@ class CodeGen():
 
         if tac.target != "exit":
 
-            insrts.append("addi $sp, -4")
-            insrts.append("sw $ra, 0($sp)")
+            # insrts.append("addi $sp, -4")
+            # insrts.append("sw $ra, 0($sp)")
 
             if tac.type == InstrType.call:
                 insrts.append("jal "+tac.target)
             else:
                 insrts.append("jal "+LibFns[tac.target])
                 
-            insrts.append("lw $ra, 0($sp)")
-            insrts.append("addi $sp, 4")
+            # insrts.append("lw $ra, 0($sp)")
+            # insrts.append("addi $sp, 4")
             # get the return register
             dest = tac.dest
             # check if we want to store the return value
             if dest != None:
+                # so it's just a copy statement, so we assign $v0 to dest
                 allocatedR = self._regAlloc.getReg(dest, tac, nextUse, {})
-                self._regAlloc.removeFromFree(allocatedR)     # remove from free list
-                insrts.append("move "+ str(allocatedR) +", $v0")
+                self._regAlloc.removeFromFree(allocatedR) 
+                self.storeSpilled(allocatedR) 
+                insrts.append("move "+ allocatedR + ", $v0")
+                # allocatedR = "$v0"
                 # update the discriptor of destination and allocated R
                 self.updateRegAddrOfDest(dest, allocatedR)
             
         else:
             insrts.append("j "+LibFns[tac.target])
 
-        if tac.type == InstrType.call:
-            jumpIns = insrts 
-        else:
-            self._newBlockIns += insrts
+        # if tac.type == InstrType.call:
+        #     jumpIns = insrts 
+        # else:
+        self._newBlockIns += insrts
 
         return jumpIns
 
@@ -353,12 +361,17 @@ class CodeGen():
         else:     
             allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
             self._regAlloc.removeFromFree(allocatedR)     # remove from free list
-            jumpIns.append("move $v0, "+allocatedR)
+
             # If src=Ins.srcOperand is not in 'Register':
             # get it from memory and store in the register
             self.lwInR(src, allocatedR)
 
+            # if allocatedR != "$v0":
+            jumpIns.append("move $v0, "+allocatedR)
+
         # add the load for return value
+        jumpIns.append("lw $ra, 0($sp)")
+        jumpIns.append("addi $sp, $sp, 4")
         jumpIns.append("jr $ra")        
 
         return jumpIns
@@ -366,6 +379,7 @@ class CodeGen():
 
     # Handle the conditional jump instructions
     def handleCondJump(self, tac, nextUse):
+        genereatedIns = []
         srcs = tac.srcs
         # get registers for all variabels
         allocatedRs = {}
@@ -377,10 +391,15 @@ class CodeGen():
             if attrs["type"] == "const_int":
                 # generate a li instruction
                 self.genLiInstr(rSrc, src)
-
+            else:
+                # If src=Ins.srcOperand is not in 'Register':
+                # get it from memory and store in the register
+                self.lwInR(src, rSrc)
+            
         newExp = [allocatedRs[srcs[0]], allocatedRs[srcs[1]]]
-        self._newBlockIns.append(OperatorMap[tac.operator]+" "+", ".join(newExp)+", "+str(tac.target))
+        genereatedIns.append(OperatorMap[tac.operator]+" "+", ".join(newExp)+", "+str(tac.target))
 
+        return genereatedIns
 
     # Restore the variables at the end block which are needed. 
     def restoreAtEnd(self, nonTempVars):
@@ -401,13 +420,27 @@ class CodeGen():
                     # genereatedIns.append(Translator.store(x,rX))
                     self._newBlockIns.append("sw "+str(rX)+", g_"+str(x))
                     # Change the Addr_Des[x] to include it's own memory `x`.
-                    self._addrDis.appendR(x, x)
+                    self._addrDis.setR(x, x)
+
+                    # make the register free
+                    self._toFreeRs.append(rX)
+
                 else:
                     print "code:351::"
                     print self._regDis.registers
                     print self._addrDis.addrs
                     print self._st._lexems
                     print "Unable to restore value of: g_"+str(x)
+
+            else:
+                # remove other location and if there is a register 
+                # set that to free
+                for r in self._addrDis.fetchR(x):
+                    if self._regDis.isIn(r):
+                        # yes , it a register
+                        self._toFreeRs.append(r)
+                # set that x only holds it's memory location
+                self._addrDis.setR(x, x)
 
     # if Spill Happens, Store the locations in from spilled register
     def storeSpilled(self, allocatedR):
@@ -426,7 +459,6 @@ class CodeGen():
         # get the value of constant
         attrs = self._st.getAttrs(val)
         self._newBlockIns.append("li "+str(reg)+", "+str(attrs["val"]))
-        self._toFreeRs.append(reg)
 
 
     # Load from memory and store in a register
@@ -456,22 +488,16 @@ class CodeGen():
         self._addrDis.removeR(rDest, dest)
 
 if __name__ == '__main__':
-    ir = IR("./../test/sample_input3.ir")
+    fileName = "./../test/test1.ir"
+    if len(sys.argv) == 2:
+        fileName = sys.argv[1]
+    ir = IR(fileName)
     code = CodeGen(ir)
-    print "\t.data"
-    for var in code._globalVars:
-        print "g_"+str(var) + ":\t.word\t0"
     print "\t.text"
-    print "\t.global B1\n"
+    print "\t.globl main\n"
+    print "main:\n"
     codeBlocks = code._codeBlocks
     # add the library functions
-    lib = Lib()
-    instrs = lib.genFns()
-    for ins in instrs.keys():
-       print str(ins)+":"
-       print "\t"+"\n\t".join(instrs[ins])
-
-    print "\n"
     # Now add the generated block by code generator
     i = 1
     for node in codeBlocks:   
@@ -480,3 +506,15 @@ if __name__ == '__main__':
         i += 1
 
     print "\tj "+LibFns["exit"]
+
+    lib = Lib()
+    instrs = lib.genFns()
+    for ins in instrs.keys():
+       print str(ins)+":"
+       print "\t"+"\n\t".join(instrs[ins])
+
+
+
+    print "\n\t.data"
+    for var in code._globalVars:
+        print "g_"+str(var) + ":\t.word\t0"

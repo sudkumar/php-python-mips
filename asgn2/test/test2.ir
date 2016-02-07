@@ -5,4 +5,5 @@
 5, exit
 6, label, foo
 7, readInt, b
-8, return, b
+8, *, b, b, b
+9, return, b
