@@ -15,15 +15,20 @@
     - RegDis: Register descriptor file.
     - SymbolTable: symbol table which store all information about lexemes and tokens.
     - TAC: 3 address code instructions file. 
+    - __main__: program start here.
 
 - test
-    Test cases contaning Intermediate 3AC.
-    - test1.ir          // computes gcd for two numbers  
+
+Test cases contaning Intermediate 3AC.
+
+      
+    - test1.ir          // computes gcd for two numbers
     - test2.ir          // square of a number
     - test3.ir          // finds numbers which are divisible by 3 which are    less than a number n. 
     - test4.ir          // reverse an integer digits 
     - test5.ir          // finds factorial of a number
      
+
 - makefile
     - to wrap all things together.
 
