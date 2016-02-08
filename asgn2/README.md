@@ -37,9 +37,9 @@ Test cases contaning Intermediate 3AC.
 
         HR                  Instruction type                    IR
 
-        a = b                   assign                       =, a, b
+        a = b                   copy                        =, a, b
 
-        a = 2                   assign                       =, a, 2
+        a = 2                   copy                        =, a, 2
 
         a = b + c               assign                       +, a, b, c
 
@@ -53,19 +53,23 @@ Test cases contaning Intermediate 3AC.
 
         a = b % c               assign                      %, a, b, c
 
-        if(a < b){              jump                    ifgoto a, > , b, L1 
+        if(a < b){              cond jump               ifgoto a, > , b, L1 
             stmt1                                       stmt1
         }else{                                          goto L2
             stmt2                                       L1: stmt2
             }                                           L2:              
 
+        break                   uncond jump           goto
+
+        continue                uncond jump           goto
+
         function func()         function def.           label, func
+
+        func()                  function call           call, func        
 
         x = func(a,b)           function call           param a
                                                         param b
                                                         call, func, x
-
-        func()                  function call           call, func
 
         return var              return                  return, var
 
