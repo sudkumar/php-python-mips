@@ -1,0 +1,11 @@
+1, readInt, a
+2, =, reverse, 0
+3, ifgoto, a, ==, 0, 9
+4, *, reverse, reverse, 10
+5, %, t, a, 10
+6, +, reverse, reverse, t
+7, /, a, a, 10
+8, goto, 3
+9, params, reverse
+10, printInt
+11, exit  

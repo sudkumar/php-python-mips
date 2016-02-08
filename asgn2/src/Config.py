@@ -22,7 +22,7 @@ Operators = {
     "+"             : InstrType.assgn,
     "-"             : InstrType.assgn,
     "*"             : InstrType.assgn,
-    "\\"            : InstrType.assgn,
+    "/"            : InstrType.assgn,
     "%"             : InstrType.assgn,
     "label"         : InstrType.label,
     "goto"          : InstrType.ujump,
