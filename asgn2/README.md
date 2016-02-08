@@ -59,16 +59,20 @@ Test cases contaning Intermediate 3AC.
             stmt2                                       L1: stmt2
             }                                           L2:              
 
-        func()                  function def.           label, func
+        function func()         function def.           label, func
 
-        x = func(a,b)           function call          param a
-                                                       param b
-                                                       call, func, x   // no of params at the end 
+        x = func(a,b)           function call           param a
+                                                        param b
+                                                        call, func, x
+
+        func()                  function call           call, func
 
         return var              return                  return, var
 
-        malloc(length)          memory allocate         params, length 
-                                                        malloc      
+        return                  return                  return 
+
+        malloc(noOfBytes)       memory allocate         params, noOfBytes 
+                                                        malloc     
  
         print var               print integer           params, var
                                                         printInt   
