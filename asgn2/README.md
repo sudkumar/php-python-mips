@@ -71,7 +71,7 @@ Test cases contaning Intermediate 3AC.
 
         return                  return                  return 
 
-        malloc(noOfBytes)          memory allocate      params, noOfBytes 
+        malloc(noOfBytes)       memory allocate         params, noOfBytes 
                                                         malloc     
  
         print var               print integer           params, var
