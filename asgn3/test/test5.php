@@ -1,9 +1,35 @@
-<?php 
-$x = 1; 
+<?php
+// DO while
 
-while($x <= 5) {
-    echo "The number is: $x <br>";
-    $x++;
-} 
+do {
+    if ($i < 5) {
+        echo "i is not big enough";
+        break;
+    }
+
+    do {
+	    if ($i < 5) {
+	        echo "i is not big enough";
+	        break;
+	    }
+	    $i *= $factor;
+	    if ($i < $minimum_limit) {
+	        break;
+	    }
+	   echo "i is ok";
+
+	    /* process i */
+
+	} while (0);
+
+    $i *= $factor;
+    if ($i < $minimum_limit) {
+        break;
+    }
+   echo "i is ok";
+
+    /* process i */
+
+} while (0);
+
 ?>
-

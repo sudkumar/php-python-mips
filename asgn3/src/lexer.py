@@ -43,6 +43,7 @@ def t_END_TAG(t):
 #reserved keywords are case insensitive so if If iF are same but not variables. 
 def t_IDENTIFIER(t):
 	r'[\$]+[a-zA-Z_][a-zA-Z_0-9]*'
+	t.value = {'ID' : t.value}  
 	return t
 
 def t_STRING(t):

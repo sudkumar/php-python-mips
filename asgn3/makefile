@@ -7,3 +7,5 @@ clean:
 	rm -rf parser.spec
 	rm parser.out
 	rm parsetab.py
+	rm output.json
+	rm index.html
