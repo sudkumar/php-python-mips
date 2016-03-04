@@ -8,4 +8,4 @@ clean:
 	rm parser.out
 	rm parsetab.py
 	rm output.json
-	rm index.html
+	rm *.html

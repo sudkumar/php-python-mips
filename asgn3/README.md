@@ -12,8 +12,10 @@
 - src
     -ply: necessary plugin for python-ply
     -lexer.py: code for token generation
+    -parser.py: code for parser
+    -print_table: create html file for given parse tree json. 
 - test
-    - Contains some test cases as input for lexer
+    - Contains some test cases as input for parser
 - makefile
     - To wrap all things and running
 
@@ -22,7 +24,12 @@
     make clean
     make
 
-> This will create our executable binary lexer file in a bin folder
+> This will create our executable binary parser file in a bin folder
 > To run test cases
 
-    ./bin/lexer ./test/test1.php
+    ./bin/parser ./test/test1.php
+
+> This will create test1.html file in root folder, to see parse tree
+ 
+    firefox test1.html
+

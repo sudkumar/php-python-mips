@@ -28,7 +28,7 @@ class ParseTree():
 
 	# write the html content to the given file
 	def create_html(self, fileName):
-		topHTML =  '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Parse Tree</title><style>  tr, th, td, .token, table{position: relative; padding: 0; margin: 0;} td{vertical-align: top; text-align: center; color: dimgray; padding: 26px 5px 0; } th{color: black; font-weight: normal; font-style: italic } th:after, th:before, .token:before{content: ""; position:absolute; width: 2px; height: 15px; background: grey; left: calc(50% - 1px); bottom: 100%;} th:after{top: 100%; height: 13px} table{ border-collapse: collapse; margin: 0px auto;} .first, .last, .mid{display:block;  width:50%; height: 2px; background: gray; position: absolute; top: 11px; left: 50%} .mid{width: 100%; left: 0} .last{left: 0} .start:before{display: none;}</style></head><body>'
+		topHTML =  '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Parse Tree</title><style>  tr, th, td, .token, table{position: relative; padding: 0; margin: 0;} td{vertical-align: top; text-align: center; color: dimgray; padding: 26px 5px 0; } th{color: black; font-weight: normal; font-style: italic } th:after, th:before, .token:before{content: ""; position:absolute; width: 2px; height: 15px; background: grey; left: calc(50% - 1px); bottom: 100%;} th:after{top: 100%; height: 13px} table{ border-collapse: collapse; margin: 0px auto;} .first, .last, .mid{display:block;  width:50%; height: 2px; background: gray; position: absolute; top: 11px; left: 50%} .mid{width: 100%; left: 0} .last{left: 0} .start:before{display: none;} table{font-size: 11px;}</style></head><body>'
 		midHTML = ''.join(self.ol)		
 		bottomHTML = "</body></html>"
 		with open(fileName, "w+") as htmlFile:

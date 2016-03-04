@@ -24,6 +24,7 @@ precedence = (
   ('right', 'BIT_NOT', 'INC', 'DEC',),
   ('right', 'LBRACKET'),
   ('nonassoc', 'NEW', 'CLONE'),
+  ('left', 'NOELSE'),
   ('left', 'ELSEIF'),
   ('left', 'ELSE'),
   ('left', 'ENDIF'),
@@ -31,47 +32,44 @@ precedence = (
   )
 
 def p_start(p):
-    'start : top_statement_list'
+    'start : stmt_list'
     p[0] = {"start":[p[1]]}    
 
-def p_top_statement_list(p):
-    '''top_statement_list : top_statement_list top_statement
+def p_stmt_list(p):
+    '''stmt_list : stmt_list top_stmt
                         | empty '''
     if len(p) == 3 :        
-        p[0] = {"top_statement_list":[p[1],p[2]]}
+        p[0] = {"stmt_list":[p[1],p[2]]}
     else:        
         p[0] = p[1]
 
-def p_top_statement(p):
-    '''top_statement : statement
-                   | function_declaration_statement'''
+def p_top_stmt(p):
+    '''top_stmt : stmt
+                   | func_decl'''
     p[0] = p[1]
 
 #--------------------------------------------------------------------------------------------------------                 
 
 # --- var $a, $b, $c
 
-def p_top_statement_constant(p):
-    '''top_statement : VAR constant_declarations SEMICOLON
-            | constant_declarations SEMICOLON'''
-    if(len(p)==4):
-        p[0] =  {"top_statement": [p[1],p[2],p[3]]}
-    else:
-        p[0] =  {"top_statement": [p[1],p[2]]}
+def p_stmt_const(p):
+    'top_stmt : VAR const_decls SEMICOLON'
+    p[0] =  {"top_stmt": [p[1],p[2],p[3]]}
 
-def p_constant_declarations(p):
-    '''constant_declarations : constant_declarations COMMA constant_declaration
-                             | constant_declaration'''
+
+def p_const_decls(p):
+    '''const_decls : const_decls COMMA const_decl
+                             | const_decl'''
     if (len(p) == 4) :        
-        p[0] = {"constant_declarations":[p[1],p[2],p[3]]}
+        p[0] = {"const_decls":[p[1],p[2],p[3]]}
     else:        
         p[0] = p[1]
 
-def p_constant_declaration(p):
-    '''constant_declaration : IDENTIFIER EQUAL expr
+def p_const_decl(p):
+    '''const_decl : IDENTIFIER EQUAL expr
                             | IDENTIFIER'''      
     if (len(p) == 4) :        
-        p[0] = {"constant_declaration":[p[1],p[2],p[3]]}
+        p[0] = {"const_decl":[p[1],p[2],p[3]]}
     else:
         p[0] = p[1] 
 
@@ -79,192 +77,197 @@ def p_constant_declaration(p):
 
 # --- Function
 
-def p_function_declaration_statement(p):
-    'function_declaration_statement : FUNCTION STRING LPAREN parameter_list RPAREN LBRACE inner_statement_list RBRACE'
-    p[0] = {"function_decl_statement":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]]}
+def p_func_decl(p):
+    'func_decl : FUNCTION STRING LPAREN params RPAREN LBRACE inner_stmts RBRACE'
+    p[0] = {"func_decl":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]]}
 
-def p_parameter_list(p):
-    '''parameter_list : parameter_list COMMA parameter
-                      | parameter
+def p_params(p):
+    '''params : params COMMA param
+                      | param
                       | empty'''
     if(len(p)==2):                      
         p[0] = p[1]
     else:        
-        p[0] = {"parameter_list": [p[1],p[2],p[3]]}
+        p[0] = {"params": [p[1],p[2],p[3]]}
 
-def p_parameter(p):
-    '''parameter : IDENTIFIER
+def p_param(p):
+    '''param : IDENTIFIER
                  | BIT_AND IDENTIFIER
                  | IDENTIFIER EQUAL scalar
                  | BIT_AND IDENTIFIER EQUAL scalar'''
     if(len(p)==2):                      
-        p[0] = {"parameter":[p[1]]}
+        p[0] = {"param":[p[1]]}
 
     elif(len(p)==3):        
-        p[0] = {"parameter":[p[1],p[2]]}
+        p[0] = {"param":[p[1],p[2]]}
     elif(len(p)==4):
-        p[0] = {"parameter":[p[1],p[2],p[3]]}
+        p[0] = {"param":[p[1],p[2],p[3]]}
     else:        
-        p[0] = {"parameter":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"param":[p[1],p[2],p[3],p[4]]}
 
 #--------------------------------------------------------------------------------------------------------                 
 
 # --- IF ELSE
 
-def p_statement_if(p):
-    '''statement : if_stmt
+def p_stmt_if(p):
+    '''stmt : if_stmt
                | alt_if_stmt'''
-    p[0] = p[1]             
+    p[0] = p[1]      
 def p_if_stmt(p):
-    '''if_stmt : if_stmt_without_else ELSE statement'''
-    p[0] = {"if_stmt":[p[1],p[2],p[3]]}    
-
-def p_if_stmt_without_else(p):
-    '''if_stmt_without_else : IF LPAREN expr RPAREN statement
-                          | if_stmt_without_else ELSEIF LPAREN expr RPAREN statement'''
-    if(len(p)==6):
-        p[0] = {"if_stmt_without_else":[p[1],p[2],p[3],p[4],p[5]]}
+    '''if_stmt : if_stmt_without_else %prec NOELSE
+             | if_stmt_without_else ELSE stmt'''
+    if(len(p)==4):
+        p[0] = {"if_stmt":[p[1],p[2],p[3]]}    
     else:
-        p[0] = {"if_stmt_without_else":[p[1],p[2],p[3],p[4],p[5],p[6]]}    
+        print str(len(p)) + 'sss'
+        p[0] = {"if_stmt":[p[1]]} 
+
+            
+def p_if_stmt_without_else(p):
+    '''if_stmt_without_else : IF LPAREN expr RPAREN stmt
+                          | if_stmt_without_else ELSEIF LPAREN expr RPAREN stmt'''
+    if(len(p)==6):
+        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5]]}
+    else:
+        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}    
 
 
 def p_alt_if_stmt(p):
     '''alt_if_stmt : alt_if_stmt_without_else ENDIF SEMICOLON
-                 | alt_if_stmt_without_else ELSE COLON inner_statement_list ENDIF SEMICOLON'''
+                 | alt_if_stmt_without_else ELSE COLON inner_stmts ENDIF SEMICOLON'''
     if(len(p)==4):
-        p[0] = {"alt_if_stmt":[p[1],p[2],p[3]]}
+        p[0] = {"if_stmt":[p[1],p[2],p[3]]}
     else:
-        p[0] = {"alt_if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}    
+        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}    
 
 def p_alt_if_stmt_without_else(p):
-    '''alt_if_stmt_without_else : IF LPAREN expr RPAREN COLON inner_statement_list
-                              | alt_if_stmt_without_else ELSEIF LPAREN expr RPAREN COLON inner_statement_list'''
+    '''alt_if_stmt_without_else : IF LPAREN expr RPAREN COLON inner_stmts
+                              | alt_if_stmt_without_else ELSEIF LPAREN expr RPAREN COLON inner_stmts'''
     if(len(p)==7):
-        p[0] = {"alt_if_stmt_without_else":[p[1],p[2],p[3],p[4],p[5],p[6]]}
+        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}
     else:
-        p[0] = {"alt_if_stmt_without_else":[p[1],p[2],p[3],p[4],p[5],p[6],p[7]]}    
+        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6],p[7]]}    
 
 
 #--------------------------------------------------------------------------------------------------------                 
 
-# --- While Statement
+# --- While Stmt
 
-def p_statement_while(p):
-    'statement : WHILE LPAREN expr RPAREN while_statement'
-    p[0] = {"statement":[p[1],p[2],p[3],p[4],p[5]]}
+def p_stmt_while(p):
+    'stmt : WHILE LPAREN expr RPAREN while_stmt'
+    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5]]}
 
-def p_while_statement(p):
-    '''while_statement : statement
-                       | COLON inner_statement_list ENDWHILE SEMICOLON'''  
+def p_while_stmt(p):
+    '''while_stmt : stmt
+                       | COLON inner_stmts ENDWHILE SEMICOLON'''  
     if(len(p)==2):
-        p[0] = {"while_statement":[p[1]]}
+        p[0] = {"while_stmt":[p[1]]}
     else:
-        p[0] = {"while_statement":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"while_stmt":[p[1],p[2],p[3],p[4]]}
 
 #--------------------------------------------------------------------------------------------------------                 
 
 # --- Do while
 
-def p_statement_do_while(p):
-    'statement : DO statement WHILE LPAREN expr RPAREN SEMICOLON'
-    p[0] = {"statement":[p[1],p[2],p[3],p[4],p[5],p[6],p[7]]}
-
+def p_stmt_do_while(p):
+    'stmt : DO stmt WHILE LPAREN expr RPAREN SEMICOLON'
+    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5],p[6],p[7]]}
 #--------------------------------------------------------------------------------------------------------                 
 
 # --- for loop
 
-def p_statement_for(p):
-    'statement : FOR LPAREN for_expr SEMICOLON for_expr SEMICOLON for_expr RPAREN for_statement'
-    p[0] = {"statement":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9]]}
+def p_stmt_for(p):
+    'stmt : FOR LPAREN for_expr SEMICOLON for_expr SEMICOLON for_expr RPAREN for_stmt'
+    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9]]}
 
 def p_for_expr(p):
     '''for_expr : empty
                 | non_empty_for_expr'''
-    p[0] = {"for_expr":[p[1]]}
+    p[0] = p[1] 
 
 
 def p_non_empty_for_expr(p):
     '''non_empty_for_expr : non_empty_for_expr COMMA expr
                           | expr'''
     if(len(p)==4):                          
-        p[0] = {"non_empty_for_expr":[p[1],p[2],p[3]]}
+        p[0] = {"for_expr":[p[1],p[2],p[3]]}
     else:
-        p[0] = {"non_empty_for_expr":[p[1]]}
+        p[0] = {"for_expr":[p[1]]}
 
-def p_for_statement(p):
-    '''for_statement : statement
-                     | COLON inner_statement_list ENDFOR SEMICOLON'''
+def p_for_stmt(p):
+    '''for_stmt : stmt
+                     | COLON inner_stmts ENDFOR SEMICOLON'''
     if(len(p)==2):                          
-        p[0] = {"for_statement":[p[1]]}
+        p[0] = {"for_stmt":[p[1]]}
     else:
-        p[0] = {"for_statement":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"for_stmt":[p[1],p[2],p[3],p[4]]}
 
 #--------------------------------------------------------------------------------------------------------                 
 
 # --- foreach
 
-def p_statement_foreach(p):
-    'statement : FOREACH LPAREN expr AS foreach_variable foreach_optional_arg RPAREN foreach_statement'
-    p[0] = {"statement":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]]}
+def p_stmt_foreach(p):
+    'stmt : FOREACH LPAREN expr AS foreach_var foreach_arg RPAREN foreach_stmt'
+    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]]}
 
-def p_foreach_variable(p):
-    '''foreach_variable : IDENTIFIER
+def p_foreach_var(p):
+    '''foreach_var : IDENTIFIER
                         | BIT_AND IDENTIFIER'''
     if(len(p)==2):                          
         p[0] = p[1]
     else:
-        p[0] = {"foreach_variable":[p[1],p[2]]}
+        p[0] = {"foreach_var":[p[1],p[2]]}
 
-def p_foreach_optional_arg(p):
-    '''foreach_optional_arg : empty
-                            | DOUBLE_ARROW foreach_variable'''
+def p_foreach_arg(p):
+    '''foreach_arg : empty
+                            | DOUBLE_ARROW foreach_var'''
     if(len(p)==2):
         p[0] = p[1]
     else:
-        p[0] = {"foreach_optional_arg":[p[1],p[2]]}
+        p[0] = {"foreach_arg":[p[1],p[2]]}
 
-def p_foreach_statement(p):
-    '''foreach_statement : statement
-                         | COLON inner_statement_list ENDFOREACH SEMICOLON'''
+def p_foreach_stmt(p):
+    '''foreach_stmt : stmt
+                         | COLON inner_stmts ENDFOREACH SEMICOLON'''
     if(len(p)==2):
         p[0] = p[1]
     else:
-        p[0] = {"foreach_statement":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"foreach_stmt":[p[1],p[2],p[3],p[4]]}
 
 #--------------------------------------------------------------------------------------------------------                 
 
 # --- SWITCH Case
 
-def p_statement_switch(p):
-    'statement : SWITCH LPAREN expr RPAREN switch_case_list'
-    p[0] = {"statement":[p[1],p[2],p[3],p[4],p[5]]}
+def p_stmt_switch(p):
+    'stmt : SWITCH LPAREN expr RPAREN switch_stmt'
+    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5]]}
 
-def p_switch_case_list(p):
-    '''switch_case_list : LBRACE case_list RBRACE
-                        | LBRACE SEMICOLON case_list RBRACE'''  
+def p_switch_stmt(p):
+    '''switch_stmt : LBRACE case_stmt RBRACE
+                        | LBRACE SEMICOLON case_stmt RBRACE'''  
     if(len(p)==4):
-        p[0] = {"switch_case_list":[p[1],p[2],p[3]]}
+        p[0] = {"switch_stmt":[p[1],p[2],p[3]]}
     else:
-        p[0] = {"switch_case_list":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"switch_stmt":[p[1],p[2],p[3],p[4]]}
 
-def p_switch_case_list_colon(p):
-    '''switch_case_list : COLON case_list ENDSWITCH SEMICOLON
-                        | COLON SEMICOLON case_list ENDSWITCH SEMICOLON'''
+def p_switch_stmt_colon(p):
+    '''switch_stmt : COLON case_stmt ENDSWITCH SEMICOLON
+                        | COLON SEMICOLON case_stmt ENDSWITCH SEMICOLON'''
     if(len(p)==5):
-        p[0] = {"switch_case_list":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"switch_stmt":[p[1],p[2],p[3],p[4]]}
     else:
-        p[0] = {"switch_case_list":[p[1],p[2],p[3],p[4],p[5]]}
+        p[0] = {"switch_stmt":[p[1],p[2],p[3],p[4],p[5]]}
 
-def p_case_list(p):
-    '''case_list : empty
-                 | case_list CASE expr case_separator inner_statement_list
-                 | case_list DEFAULT case_separator inner_statement_list'''
+def p_case_stmt(p):
+    '''case_stmt : empty
+                 | case_stmt CASE expr case_separator inner_stmts
+                 | case_stmt DEFAULT case_separator inner_stmts'''
     if(len(p)==2):
         p[0] = p[1]
     elif(len(p)==6):
-        p[0] = {"case_list":[p[1],p[2],p[3],p[4],p[5]]}
+        p[0] = {"case_stmt":[p[1],p[2],p[3],p[4],p[5]]}
     else:
-        p[0] = {"case_list":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"case_stmt":[p[1],p[2],p[3],p[4]]}
 
 def p_case_separator(p):
     '''case_separator : COLON
@@ -276,42 +279,42 @@ def p_case_separator(p):
 # -- break, continue, return, global, static, echo
 
 #-- Break----
-def p_statement_break(p):
-    '''statement : BREAK SEMICOLON
+def p_stmt_break(p):
+    '''stmt : BREAK SEMICOLON
                  | BREAK expr SEMICOLON'''
     if(len(p)==3):
-        p[0] = {"statement":[p[1],p[2]]}
+        p[0] = {"stmt":[p[1],p[2]]}
     else:
-        p[0] = {"statement":[p[1],p[2],p[3]]}
+        p[0] = {"stmt":[p[1],p[2],p[3]]}
 
 #-------------
 
 #-- Continue--
-def p_statement_continue(p):
-    '''statement : CONTINUE SEMICOLON
+def p_stmt_continue(p):
+    '''stmt : CONTINUE SEMICOLON
                  | CONTINUE expr SEMICOLON'''                
     if(len(p)==3):
-        p[0] = {"statement":[p[1],p[2]]}
+        p[0] = {"stmt":[p[1],p[2]]}
     else:
-        p[0] = {"statement":[p[1],p[2],p[3]]}
+        p[0] = {"stmt":[p[1],p[2],p[3]]}
 
 #-------------
 
 #-- Return----
-def p_statement_return(p):
-    '''statement : RETURN SEMICOLON
+def p_stmt_return(p):
+    '''stmt : RETURN SEMICOLON
                  | RETURN expr SEMICOLON'''
     if(len(p)==3):
-        p[0] = {"statement":[p[1],p[2]]}
+        p[0] = {"stmt":[p[1],p[2]]}
     else:
-        p[0] = {"statement":[p[1],p[2],p[3]]}
+        p[0] = {"stmt":[p[1],p[2],p[3]]}
 
 #-------------
 
 #-- Global----
-def p_statement_global(p):
-    'statement : GLOBAL global_var_list SEMICOLON'
-    p[0] = {"statement":[p[1],p[2],p[3]]}
+def p_stmt_global(p):
+    'stmt : GLOBAL global_var_list SEMICOLON'
+    p[0] = {"stmt":[p[1],p[2],p[3]]}
 
 def p_global_var_list(p):
     '''global_var_list : global_var_list COMMA IDENTIFIER
@@ -319,14 +322,14 @@ def p_global_var_list(p):
     if(len(p)==2):
         p[0] = p[1]
     else:
-        p[0] = {"statement":[p[1],p[2],p[3]]}
+        p[0] = {"global_var_list":[p[1],p[2],p[3]]}
 
 #-------------
 
 #-- Static----
-def p_statement_static(p):
-    'statement : STATIC static_var_list SEMICOLON'
-    p[0] = {"statement":[p[1],p[2],p[3]]}
+def p_stmt_static(p):
+    'stmt : STATIC static_var_list SEMICOLON'
+    p[0] = {"stmt":[p[1],p[2],p[3]]}
 
 def p_static_var_list(p):
     '''static_var_list : static_var_list COMMA static_var
@@ -334,7 +337,7 @@ def p_static_var_list(p):
     if(len(p)==2):
         p[0] = p[1]
     else:
-        p[0] = {"statement":[p[1],p[2],p[3]]}
+        p[0] = {"stmt":[p[1],p[2],p[3]]}
 
 
 def p_static_var(p):
@@ -348,9 +351,9 @@ def p_static_var(p):
 #-------------
 
 #--- ECHO ----
-def p_statement_echo(p):
-    'statement : ECHO echo_expr_list SEMICOLON'
-    p[0] = {"statement":[p[1],p[2],p[3]]}
+def p_stmt_echo(p):
+    'stmt : ECHO echo_expr_list SEMICOLON'
+    p[0] = {"stmt":[p[1],p[2],p[3]]}
 
 def p_echo_expr_list(p):
     '''echo_expr_list : echo_expr_list COMMA expr
@@ -363,31 +366,31 @@ def p_echo_expr_list(p):
 
 #--------------------------------------------------------------------------------------------------------                 
 
-# --- statement block
+# --- stmt block
 
-def p_statement_block(p):
-    'statement : LBRACE inner_statement_list RBRACE'
-    p[0] = {"statement":[p[1],p[2],p[3]]}
+def p_stmt_block(p):
+    'stmt : LBRACE inner_stmts RBRACE'
+    p[0] = {"stmt":[p[1],p[2],p[3]]}
 
-def p_statement_empty(p):
-    'statement : SEMICOLON'                                                                                                                    
+def p_stmt_empty(p):
+    'stmt : SEMICOLON'                                                                                                                    
     p[0] = p[1]                                  
 
-def p_statement_expr(p):
-    'statement : expr SEMICOLON'
-    p[0] = {"statement":[p[1],p[2]]} 
+def p_stmt_expr(p):
+    'stmt : expr SEMICOLON'
+    p[0] = {"stmt":[p[1],p[2]]} 
 
-def p_inner_statement_list(p):
-    '''inner_statement_list : inner_statement_list inner_statement
+def p_inner_stmts(p):
+    '''inner_stmts : inner_stmts inner_stmt
                             | empty'''
     if(len(p)==2):
         p[0] = p[1] 
     else:
-        p[0] = {"inner_statement_list":[p[1],p[2]]}
+        p[0] = {"inner_stmts":[p[1],p[2]]}
 
-def p_inner_statement(p):
-    '''inner_statement : statement
-               | function_declaration_statement'''
+def p_inner_stmt(p):
+    '''inner_stmt : stmt
+               | func_decl'''
     p[0] = p[1] 
 
 #--------------------------------------------------------------------------------------------------------                 
@@ -399,41 +402,41 @@ def p_expr_variable(p):
     p[0] = p[1] 
 
 def p_variable(p):
-    '''variable : base_variable
-              | function_call'''
+    '''variable : base_var
+              | func_call'''
     p[0] = p[1]
 
-def p_function_call(p):
-    'function_call : STRING LPAREN function_call_parameter_list RPAREN'
-    p[0] = {"function_call":[p[1],p[2],p[3],p[4]]}
+def p_func_call(p):
+    'func_call : STRING LPAREN func_params RPAREN'
+    p[0] = {"func_call":[p[1],p[2],p[3],p[4]]}
 
-def p_function_call_parameter_list(p):
-    '''function_call_parameter_list : function_call_parameter_list COMMA function_call_parameter
-                                  | function_call_parameter
+def p_func_params(p):
+    '''func_params : func_params COMMA func_param
+                                  | func_param
                                   | empty'''
     if(len(p)==2):
         p[0] = p[1] 
     else:
-        p[0] = {"function_call_parameter_list":[p[1],p[2],p[3]]}
+        p[0] = {"func_params":[p[1],p[2],p[3]]}
 
-def p_function_call_parameter(p):
-    '''function_call_parameter : expr
-                               | BIT_AND variable'''
+def p_func_param(p):
+    '''func_param : expr
+                    | BIT_AND variable'''
     if(len(p)==2):
         p[0] = p[1] 
     else:
-        p[0] = {"function_call_parameter":[p[1],p[2]]}
+        p[0] = {"func_param":[p[1],p[2]]}
 
 
 def p_reference_variable_array_offset(p):
-    '''base_variable : base_variable LBRACKET dim_offset RBRACKET
-                   | base_variable LBRACE expr RBRACE
+    '''base_var : base_var LBRACKET dim_offset RBRACKET
+                   | base_var LBRACE expr RBRACE
                    | IDENTIFIER'''
 
     if(len(p)==2):
         p[0] = p[1]
     else:        
-        p[0] = {"base_variable":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"base_var":[p[1],p[2],p[3],p[4]]}
 
 def p_dim_offset(p):
     '''dim_offset : expr
@@ -478,7 +481,7 @@ def p_static_array_pair_list(p):
     if(len(p)==2):          
         p[0] = p[1]
     else:        
-        p[0] = {"scalar_array_pair_list":[p[1],p[2]]}
+        p[0] = {"scalar_list":[p[1],p[2]]}
 
 def p_static_non_empty_array_pair_list_item(p):
     '''scalar_non_empty_array_pair_list : scalar_non_empty_array_pair_list COMMA scalar
@@ -486,15 +489,15 @@ def p_static_non_empty_array_pair_list_item(p):
     if(len(p)==2):          
         p[0] = p[1]
     else:
-        p[0] = {"scalar_non_empty_array_pair_list":[p[1],p[2],p[3]]}
+        p[0] = {"scalar_list":[p[1],p[2],p[3]]}
 
 def p_static_non_empty_array_pair_list_pair(p):
     '''scalar_non_empty_array_pair_list : scalar_non_empty_array_pair_list COMMA scalar DOUBLE_ARROW scalar
                                         | scalar DOUBLE_ARROW scalar'''
     if(len(p)==6):          
-        p[0] = {"scalar_non_empty_array_pair_list":[p[1],p[2],p[3],p[4],p[5]]}
+        p[0] = {"scalar_list":[p[1],p[2],p[3],p[4],p[5]]}
     else:
-        p[0] = {"scalar_non_empty_array_pair_list":[p[1],p[2],p[3]]}
+        p[0] = {"scalar_list":[p[1],p[2],p[3]]}
 
 #---------------------------------------
 def p_expr_array(p):
@@ -507,7 +510,7 @@ def p_array_pair_list(p):
     if(len(p)==2):          
         p[0] = p[1]
     else:
-        p[0] = {"array_pair_list":[p[1],p[2]]}
+        p[0] = {"array_list":[p[1],p[2]]}
 
 def p_possible_comma(p):
     '''possible_comma : empty
@@ -520,11 +523,11 @@ def p_non_empty_array_pair_list_item(p):
                                  | BIT_AND variable
                                  | expr'''
     if(len(p)==5): 
-        p[0] = {"non_empty_array_pair_list":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"array_list":[p[1],p[2],p[3],p[4]]}
     elif(len(p)==4): 
-        p[0] = {"non_empty_array_pair_list":[p[1],p[2],p[3]]}
+        p[0] = {"array_list":[p[1],p[2],p[3]]}
     elif(len(p)==3):
-        p[0] = {"non_empty_array_pair_list":[p[1],p[2]]}
+        p[0] = {"array_list":[p[1],p[2]]}
     else:
         p[0] = p[1]
 
@@ -536,13 +539,13 @@ def p_non_empty_array_pair_list_pair(p):
                                  | expr DOUBLE_ARROW expr
                                  '''                                 
     if(len(p)==7): 
-        p[0] = {"non_empty_array_pair_list":[p[1],p[2],p[3],p[4],p[5],p[6]]}
+        p[0] = {"array_list":[p[1],p[2],p[3],p[4],p[5],p[6]]}
     elif(len(p)==6): 
-        p[0] = {"non_empty_array_pair_list":[p[1],p[2],p[3],p[4],p[5]]}
+        p[0] = {"array_list":[p[1],p[2],p[3],p[4],p[5]]}
     elif(len(p)==5):
-        p[0] = {"non_empty_array_pair_list":[p[1],p[2],p[3],p[4]]}
+        p[0] = {"array_list":[p[1],p[2],p[3],p[4]]}
     elif(len(p)==4):
-        p[0] = {"non_empty_array_pair_list":[p[1],p[2],p[3]]}
+        p[0] = {"array_list":[p[1],p[2],p[3]]}
  
 # def p_non_empty_array_list(p):
 #     '''non_empty_array_list : non_empty_array_list COMMA scalar
@@ -676,18 +679,14 @@ inputStr = open(sys.argv[1], "r")
 data= ""
 for line in inputStr:
   data += (line)
-# try:
-#    s = data
-# except EOFError:
-#    pass
-# # if not s: continue
+
 log = logging.getLogger()
 
+file = sys.argv[1]
+filename = file.split('test')[2]
+filename = filename.split('.')[0]
 result = parser.parse(data,debug=log)
-
-# print(json.dumps(result))
 file = open('output.json', 'w+')
-input = json.dumps(result)
-file.write(input)
-# create the parse table and print it to index.html file
-ParseTree(json.loads(input)).create_html("index.html")
+file.write(json.dumps(result))
+
+ParseTree(result).create_html("test"+filename+".html")
