@@ -10,10 +10,10 @@
 
 ## File Structure
 - src
-    -ply: necessary plugin for python-ply
-    -lexer.py: code for token generation
-    -parser.py: code for parser
-    -print_table: create html file for given parse tree json. 
+    - ply: necessary plugin for python-ply    
+    - lexer.py: code for token generation
+    - parser.py: code for parser
+    - print_table: create html file for given parse tree json. 
 - test
     - Contains some test cases as input for parser
 - makefile
