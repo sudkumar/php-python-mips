@@ -1,0 +1,4 @@
+bin
+*.pyc
+src/parser.out
+src/parsetab.py
