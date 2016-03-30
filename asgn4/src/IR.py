@@ -22,8 +22,10 @@ class IR():
         self.nextquad += 1
 
 
-    def makeList(self, _i):
-        return [_i]
+    def makeList(self, _i=None):
+        if _i:
+            return [_i]
+        return []
 
     def mergeList(self, _list1, _list2):
         return _list1 + _list2

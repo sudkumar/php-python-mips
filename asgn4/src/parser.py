@@ -43,7 +43,7 @@ def p_start(p):
     stm.pop()
     print stm.root.symbols
     global ir
-    print ir.tac
+    print "\n".join(ir.tac)
 
 
 def p_start_marker(p):
@@ -52,18 +52,25 @@ def p_start_marker(p):
     stm = STManager()
 
 def p_stmt_list(p):
-    '''stmt_list : stmt_list top_stmt
+    '''stmt_list : top_stmt jump_marker stmt_list
                         | empty '''
-    if len(p) == 3 :
-        p[0] = {"stmt_list":[p[1],p[2]]}
+    p[0] = {}
+    global ir
+    if len(p) == 4 :
+        ir.backpatch(p[1]["nextlist"], p[2]["quad"])
+        p[0]["nextlist"] = p[3]["nextlist"]
     else:
-        p[0] = p[1]
+        p[0]["nextlist"] = ir.makeList()
 
 def p_top_stmt(p):
     '''top_stmt : stmt
                    | func_decl'''
+    global ir
     p[0] = p[1]
-
+    try:
+        nextlist = p[1]["nextlist"]
+    except:
+        p[0]["nextlist"] = ir.makeList()
 #--------------------------------------------------------------------------------------------------------
 
 # --- var $a, $b, $c
@@ -71,6 +78,8 @@ def p_top_stmt(p):
 def p_stmt_const(p):
     'top_stmt : VAR const_decls SEMICOLON'
     p[0] =  {"top_stmt": [p[1],p[2],p[3]]}
+    global ir
+    p[0]["nextlist"] = ir.makeList()
 
 
 def p_const_decls(p):
@@ -106,9 +115,9 @@ def p_const_decl(p):
         global ir
         ir.emit(name + " = " + p[3]["place"])
 
-        p[0] = {"const_decl":[p[1],p[2],p[3]]}
-    else:
-        p[0] = p[1]
+        # p[0] = {"const_decl":[p[1],p[2],p[3]]}
+    # else:
+        # p[0] = p[1]
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -157,16 +166,23 @@ def p_if_stmt(p):
         p[0] = {"if_stmt":[p[1],p[2],p[3]]}
     else:
         print str(len(p)) + 'sss'
-        p[0] = {"if_stmt":[p[1]]}
+        p[0] = {"nextlist": p[1]["nextlist"]}
 
 
 def p_if_stmt_without_else(p):
-    '''if_stmt_without_else : IF LPAREN expr RPAREN stmt
+    '''if_stmt_without_else : IF LPAREN expr RPAREN jump_marker stmt
                           | if_stmt_without_else ELSEIF LPAREN expr RPAREN stmt'''
-    if(len(p)==6):
-        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5]]}
-    else:
-        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}
+    global ir
+    p[0] = {}
+    try:
+        nextlist = p[6]["nextlist"]
+    except:
+        p[6]["nextlist"] = ir.makeList()
+    if(len(p)==7):
+        ir.backpatch(p[3]["truelist"], p[5]["quad"])
+        p[0]["nextlist"] = ir.mergeList(p[3]["falselist"], p[6]["nextlist"])
+    # else:
+    #     p[0] = {"if_stmt_without_else":[p[1],p[2],p[3],p[4],p[5],p[6]]}
 
 
 def p_alt_if_stmt(p):
@@ -317,10 +333,12 @@ def p_case_separator(p):
 
 #-- Break----
 def p_stmt_break(p):
-    '''stmt : BREAK SEMICOLON
-                 | BREAK expr SEMICOLON'''
-    if(len(p)==3):
-        p[0] = {"stmt":[p[1],p[2]]}
+    '''stmt : BREAK  goto_marker SEMICOLON
+                 | BREAK expr goto_marker SEMICOLON'''
+    global ir
+    p[0] = {}
+    if(len(p)==4):
+        p[0]["nextlist"] = ir.makeList(ir.nextquad)
     else:
         p[0] = {"stmt":[p[1],p[2],p[3]]}
 
@@ -522,7 +540,6 @@ def p_expr_assign(p):
 
         global ir
         ir.emit(name + " = " + p[3]["place"])
-        p[0] = {"expr":[p[1],p[2],p[3]]}
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
 
@@ -644,29 +661,18 @@ def p_expr_assign_op(p):
     ir.emit(p[1]["place"] + " = " + p[1]["place"] + " "+ p[2][0] + " "+ p[3]["place"])
 
 
-def p_expr_binary_op(p):
-    '''expr : expr AND_OP expr
-          | expr OR_OP expr
-          | expr BIT_OR expr
-          | expr BIT_XOR expr
-          | expr BIT_AND expr
-          | expr DOT expr
+def p_expr_arith(p):
+    '''expr : expr DOT expr
           | expr PLUS expr
           | expr MINUS expr
           | expr MULT expr
           | expr DIV expr
-          | expr BIT_LSHIFT expr
-          | expr BIT_RSHIFT expr
           | expr MOD expr
-          | expr IDENTICAL expr
-          | expr NOT_IDENTICAL expr
-          | expr EQ_EQ expr
-          | expr NOT_EQ expr
-          | expr LESSER expr
-          | expr LESSER_EQ expr
-          | expr GREATER expr
-          | expr GREATER_EQ expr
-          | expr INSTANCEOF expr'''
+          | expr BIT_OR expr
+          | expr BIT_XOR expr
+          | expr BIT_AND expr
+          | expr BIT_LSHIFT expr
+          | expr BIT_RSHIFT expr'''
     global ir
     name = ir.newTemp()
     if p[1]["type"] != p[3]["type"]:
@@ -679,21 +685,58 @@ def p_expr_binary_op(p):
 
     p[0] = {"place": name, "type": symType, "offset": offset}
 
+def p_expr_binary_op(p):
+    '''expr : expr AND_OP jump_marker expr
+          | expr OR_OP jump_marker expr'''
+
+    global ir
+    p[0] = {}
+    if p[2] == "||":
+        ir.backpatch(p[1]["falselist"], p[3]["quad"])
+        p[0]["truelist"] = ir.mergeList(p[1]["truelist"], p[4]["truelist"])
+        p[0]["falselist"] = p[4]["falselist"]
+    else:
+        ir.backpatch(p[1]["truelist"], p[3]["quad"])
+        p[0]["truelist"] = p[4]["truelist"]
+        p[0]["falselist"] = ir.mergeList(p[1]["falselist"], p[4]["falselist"])
+
+def p_expr_binary_relop(p):
+    '''expr : expr IDENTICAL  expr
+          | expr NOT_IDENTICAL  expr
+          | expr EQ_EQ  expr
+          | expr NOT_EQ  expr
+          | expr LESSER  expr
+          | expr LESSER_EQ  expr
+          | expr GREATER  expr
+          | expr GREATER_EQ  expr
+          | expr INSTANCEOF  expr'''
+    global ir
+    p[0] = {}
+    p[0]["truelist"] = ir.makeList(ir.nextquad)
+    p[0]["falselist"] = ir.makeList(ir.nextquad+1)
+    ir.emit("if "+ p[1]["place"] + " "+ p[2] + " "+ p[3]["place"]+ " goto ")
+    ir.emit("goto ")
 
 def p_expr_unary_op(p):
     '''expr : PLUS expr
           | MINUS expr
           | BIT_NOT expr
           | NOT expr'''
-    global ir
-    name = ir.newTemp()
-    ir.emit(name + " = " + p[1] + " "+ p[2]["place"])
-    symType = p[2]["type"]
-    offset = p[2]["offset"]
-    global stm
-    stm.insert(name, symType, offset)
+    if p[1] == "!":
+        p[0] = {}
+        p[0]["falselist"] = p[2]["truelist"]
+        p[0]["truelist"] = p[2]["falselist"]
 
-    p[0] = {"place": name, "type": symType, "offset": offset}
+    else:
+        global ir
+        name = ir.newTemp()
+        ir.emit(name + " = " + p[1] + " "+ p[2]["place"])
+        symType = p[2]["type"]
+        offset = p[2]["offset"]
+        global stm
+        stm.insert(name, symType, offset)
+
+        p[0] = {"place": name, "type": symType, "offset": offset}
 
 def p_exp_scalar(p):
     '''expr : CONST_DECIMAL
@@ -702,9 +745,15 @@ def p_exp_scalar(p):
           | NULL
           | TRUE
           | FALSE'''
-
-    # update attributes for expr
+    global ir
     p[0] = p[1]
+    if(p[1]["place"].upper() == "TRUE"):
+        p[0]["truelist"] = ir.makeList(ir.nextquad)
+        ir.emit("goto ")
+    elif(p[1]["place"].upper() == "FALSE"):
+        p[0]["falselist"] = ir.makeList(ir.nextquad)
+        ir.emit("goto ")
+
 def p_expr_ternary_op(p):
     'expr : expr COND_OP expr COLON expr'
     p[0] = {"expr":[p[1],p[2],p[3],p[4],p[5]]}
@@ -761,6 +810,19 @@ def p_expr_exit(p):
 def p_expr_print(p):
     'expr : PRINT expr'
     p[0] = {"expr":[p[1],p[2]]}
+
+def p_jump_marker(p):
+    'jump_marker : empty'
+    global ir
+    p[0] ={}
+    p[0]["quad"] = ir.nextquad
+
+def p_goto_marker(p):
+    'goto_marker : empty'
+    global ir
+    p[0] ={}
+    p[0]["quad"] = ir.nextquad
+    ir.emit("goto ")
 #--------------------------------------------------------------------------------------------------------
 
 def p_empty(p):
@@ -784,4 +846,4 @@ log = logging.getLogger()
 
 result = parser.parse(data,debug=0)
 # result = parser.parse(data,debug=log)
-# print result
+print result
