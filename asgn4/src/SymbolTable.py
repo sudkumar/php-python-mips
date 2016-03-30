@@ -2,79 +2,117 @@
 
 
 class SymbolTable():
-    """A Symbol Table to store all information about lexems and tokens"""
-    def __init__(self):
-        self._table = []
-        self._lexems = {}
-        self._len = 0
 
-    def insert(self, lxm, tkn):
-        """Insert entry into Symbol Table
-
-        Saves lexeme `lxm` and token `tkn`, and returns it's entry location
-
-        Arguments:
-            lexeme {string} -- A literal string of lexeme
-            token {strinf} -- Token Associated with lexeme
-
-        Returns:
-            {location} -- location in Symbol Table
-        """
-
-        i = self._len
-        # add lexeme to dictionary of lexems as key, and value to be it's index in table
-        self._lexems[lxm] = i
-        # create attributes for this lexeme and add them to table
-        attrs = {"token":tkn}
-        if tkn == "INT":
-            attrs["type"] = "const_int"
-            attrs["val"] = int(lxm)
-        elif tkn == "STRING":
-            attrs["type"] = "const_str"
-            attrs["val"] = lxm
-        else:
-            attrs["type"] = "variable"
-            attrs["name"] = lxm
-        self._table.append(attrs)
-        # increment the length of table
-        self._len += 1
-        # now return the index, assigned to lexeme
-        return i
+    def __init__(self, _parent=None):
+        # intialize the parent
+        self.parent = _parent
+        # intialize the symbols
+        self.symbols = {};
+        # intialize the size (width | offset) of the table
+        self.width = 0
 
 
-    def lookup(self, lxm):
-        """Lookup for a lexeme
 
-        Get the location of the lexeme `lxm` from the Symbol Table, if it exists,
-        else return None
 
-        Arguments:
-            lxm {string} -- A lexeme for search
+    """ Insert into symbol table
+        create a new entry into symbol table and put the data
+        @params _name {string} -- name (key | id) of the new entry
+        @params _type {string} -- type of name (an attribute)
+        @params _offset {integer} -- size | offset for the name
+    """
+    def insert(self, _name, _type, _offset):
+        # create a attribute's dictionary
+        attrs = {}
+        # attach the information about the _name in attrs
+        attrs["place"] = _name
+        attrs["type"] = _type
+        attrs["offset"] = _offset
 
-        Returns:
-            {location} -- location in Symbol Table
-        """
+        # attach the attributes for the name in the symbol table
+        self.symbols[_name] = attrs
+
+
+
+    """ Enter a new entry for a procedure
+        Create a new entry for a procedure.
+        @params _st {SymbolTable}  -- parent symbol table
+        @params _name {string} -- name of the procedure
+        @params _procST {SymbolTable} -- symbol table for a procedure
+    """
+    def enterProc(self, _name, _procST):
+        # create a attribute's dictionary
+        attrs = {}
+        # attach the information about the _name in attrs
+        attrs["place"] = name
+        attrs["type"] = "proc"
+        attrs["st"] = _procST
+
+        # attach the attributes for the name in the symbol table
+        self.symbols[_name] = attrs
+
+
+
+
+    """ search
+        search for a symbol in the table
+        @params _symbol {string} -- symbol for which search should be done
+        @return  -- if symbol found in the scope, return it's attribute else return None
+    """
+    def search(self, _symbol):
+        # search for symbol in the table
+        if _symbol in self.symbols.keys():
+            # if found, return it's attributes
+            return self.symbols[_symbol]
+        return None
+
+
+
+    """ Set attribute
+        set attributes for a symbol in symbol table
+        @params _symbol {string} -- symbol for which attribute is to be set
+        @params _key {string} -- key for the attribute
+        @params _val {object} -- value for the attribute
+    """
+    def setAttr(self, _symbol, _key, _val):
+        # try to set the attribute
         try:
-            i = self._lexems[lxm]
-        except KeyError, e:
-            # raise e
-            return None
-        else:
-            return i
-
-    def getAttrs(self, i):
-        """Get attributes from table with index i
-
-        Arguments:
-            i {int} -- location in table
-        Returns:
-            {dictionary} -- attributes dictionary
-        """
+            self.symbols[_symbol][_key] = _val
+        except:
+            # if there was an exception, due to undefined dictionary,
+            # create a attributes dictionary for symbol
+            self.symbols[_symbol] = {}
+            self.symbols[_symbol][_key] = _val
+    """ Get attribute
+        get attribute for a symbol in symbol table
+        @params _symbol {string} -- symbol for which attribute should be fetched
+        @params _key {string} -- attribute key
+        @return {object} -- value of attribute for key if found else None
+    """
+    def getAttr(self, _symbol, _key):
+        # try to get the attribute value if exists
         try:
-            val = self._table[i]
-        except IndexError, e:
-            # raise e
+            return self.symbols[_symbol][_key]
+        except:
+            print "Can't get ", _key, " value for ", _symbol
             return None
-        else:
-            return val
-            pass
+
+    """ Get all the attributes
+        get attribute for a symbol in symbol table
+        @params _symbol {string} -- symbol for which attribute should be fetched
+        @return {object} -- value of attribute for key if found else None
+    """
+    def getAttrs(self, _symbol):
+        # try to get the attribute value if exists
+        try:
+            return self.symbols[_symbol]
+        except:
+            print "Can't get attributes for :"+_symbol
+            return None
+
+
+    """ Add width
+        Records cumulative with of all the entries in a symbol table
+        @params {integer} _width - width to be addded
+    """
+    def addWidth(self, _width):
+        self.width += _width

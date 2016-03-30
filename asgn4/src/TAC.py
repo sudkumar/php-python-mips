@@ -3,46 +3,41 @@
 
 class TAC():
     """A Three address code instructions"""
-    def __init__(self, typ, op, ln):
-        self._typ = typ         # An InstrType attribute
-        self._op = op           # An operator attribute
+    def __init__(self, _typ, _op):
+        self.typ = _typ         # An InstrType attribute
+        self.op = _op           # An operator attribute
         # Symbol table entries pointers
-        self._destST = self._src1ST = self._src2ST = None     
-        self._target = None     # an target. my be integer or a label
-        self._ln = ln    # line number for tac
-       
+        self.dest = self.src1 = self.src2 = None
+        self.target = None     # an target. my be integer or a label
+
     def updateTarget(self, nt):
         self._target = nt
-    
+
     @property
     def type(self):
-        return self._typ
+        return self.typ
 
     @property
     def operator(self):
-        return self._op
-    
+        return self.op
+
     @property
     def dest(self):
-        return self._destST
+        return self.dest
 
     @property
     def srcs(self):
-        return self._src1ST, self._src2ST
+        return self.src1, self.src2
 
-    @property
-    def lineNumber(self):
-        return self._ln
 
     @property
     def target(self):
-        return self._target
+        return self.target
 
     @property
     def operands(self):
-        return self._destST, self._src1ST, self._src2ST
-    
+        return self.dest, self.src1, self.src2
+
     @property
     def src(self):
-        return self._src1ST
-    
+        return self.src1

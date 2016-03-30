@@ -4,12 +4,12 @@ import ply.lex as lex
 from tabulate import tabulate
 
 reserved_keywords = ['__HALT_COMPILER', 'ABSTRACT', 'AND', 'ARRAY', 'AS', 'BREAK', 'CALLABLE', 'CASE', 'CATCH', 'CLASS', 'CLONE', 'CONST', 'CONTINUE', 'DECLARE', 'DEFAULT', 'DIE', 'DO', 'ECHO', 'ELSE', 'ELSEIF', 'EMPTY', 'ENDDECLARE', 'ENDFOR', 'ENDFOREACH', 'ENDIF', 'ENDSWITCH', 'ENDWHILE', 'EVAL', 'EXIT', 'EXTENDS', 'FINAL', 'FOR', 'FOREACH', 'FUNCTION', 'GLOBAL', 'GOTO', 'IF', 'IMPLEMENTS', 'INCLUDE', 'INCLUDE_ONCE', 'INSTANCEOF', 'INSTEADOF', 'INTERFACE', 'ISSET', 'LIST', 'NAMESPACE', 'NEW', 'OR', 'PRINT', 'PRIVATE', 'PROTECTED', 'PUBLIC', 'REQUIRE', 'REQUIRE_ONCE', 'RETURN', 'STATIC', 'SWITCH', 'THROW', 'TRAIT', 'TRY', 'UNSET', 'USE', 'VAR', 'WHILE', 'XOR','NULL','TRUE','FALSE']
- 
+
 predefined_const = ['__CLASS__', '__DIR__', '__FILE__', '__FUNCTION__', '__LINE__', '__METHOD__', '__NAMESPACE__', '__TRAIT__']
 
 literal = ['IDENTIFIER','STRING','CONST_DECIMAL','CONST_HEX', 'CONST_OCTAL', 'CONST_BINARY', 'CONST_DOUBLE','CONST_STRING', 'START_TAG', 'END_TAG']
 
-		#arithematic operators :   + - * / %  **      
+		#arithematic operators :   + - * / %  **
 operators = ['PLUS','MINUS','MULT','DIV','MOD', 'EXPONENT',
 
 		#equal operators:  = += -= *= /= %=
@@ -18,10 +18,10 @@ operators = ['PLUS','MINUS','MULT','DIV','MOD', 'EXPONENT',
 		#comparison operators: == === !=    !==  > < >= <=
 		'EQ_EQ','IDENTICAL','NOT_EQ' ,'NOT_IDENTICAL','GREATER','LESSER','GREATER_EQ','LESSER_EQ',
 
-		# operators: ++ --  && || ! . .=  
+		# operators: ++ --  && || ! . .=
 		'INC','DEC','AND_OP','OR_OP','NOT','DOT','DOT_EQ',
-		
-		# bitwise operators: | & ^ ~ << >> 
+
+		# bitwise operators: | & ^ ~ << >>
 		'BIT_OR', 'BIT_AND', 'BIT_XOR', 'BIT_NOT', 'BIT_LSHIFT', 'BIT_RSHIFT',
 
 		# other operators: ; ( ) [ ] { } -> , ? :
@@ -40,10 +40,10 @@ def t_END_TAG(t):
 	r'(\?>)'
 
 
-#reserved keywords are case insensitive so if If iF are same but not variables. 
+#reserved keywords are case insensitive so if If iF are same but not variables.
 def t_IDENTIFIER(t):
 	r'[\$]+[a-zA-Z_][a-zA-Z_0-9]*'
-	t.value = {'ID' : t.value}  
+	# t.value = {'ID' : t.value}
 	return t
 
 def t_STRING(t):
@@ -57,22 +57,36 @@ def t_STRING(t):
 
 #floating constant defination
 def t_CONST_DOUBLE(t):
-	r'(([0-9]*[.]*[0-9]+)([eE][-]?)([0-9]+))|([0-9]*[\.][0-9]+)'	
-	return t
+    r'(([0-9]*[.]*[0-9]+)([eE][-]?)([0-9]+))|([0-9]*[\.][0-9]+)'
+    t.value = {"type" : t.type, "value": t.value, "offset": 8}
+    return t
 
 #string constant defination
 def t_CONST_STRING(t):
-	r'(("(\\?(.|[\r\n]))*?")|(\'(\\?(.|[\r\n]))*?\'))'
-	return t
+    r'(("(\\?(.|[\r\n]))*?")|(\'(\\?(.|[\r\n]))*?\'))'
+    t.value = {"type" : "string", "place": t.value, "offset": len(t.value)-2}
+    return t
 
 def t_COMMENT(t):
 	r'((/\*((\*+([^*/]|[\r\n]))|[^*]|[\r\n])*\*+/)|(//.*)|(\#.*))'
 
 #integer constant defination
-t_CONST_DECIMAL = r'([1-9]\d*)|(0)' 
-t_CONST_HEX = r'0[xX][\da-fA-F]+'
-t_CONST_OCTAL = r'0[0-7]+'
-t_CONST_BINARY = r'0b[01]+'
+def t_CONST_DECIMAL(t):
+    r'([1-9]\d*)|(0)'
+    t.value = {"type" : "int", "place": t.value, "offset": 4}
+    return t
+def t_CONST_HEX(t):
+    r'0[xX][\da-fA-F]+'
+    t.value = {"type" : "hex", "place": t.value, "offset": 4}
+    return t
+def t_CONST_OCTAL(t):
+    r'0[0-7]+'
+    t.value = {"type" : "octal", "place": t.value, "offset": 8}
+    return t
+def t_CONST_BINARY(t):
+    r'0b[01]+'
+    t.value = {"type" : "bin", "place": t.value, "offset": 1}
+    return t
 
 
 # Conditional ternery operators
@@ -108,7 +122,7 @@ t_NOT  = r'!'
 
 t_DOT_EQ  = r'\.='
 t_DOT  = r'\.(?!\d|=)'
- 
+
 t_LESSER_EQ  = r'<='
 t_ACCESS_OP = r'<-'
 t_BIT_LSHIFT = r'<<'
@@ -122,7 +136,7 @@ t_AND_OP  = r'&&'
 t_OR_OP  = r'\|\|'
 
 #Bitwise operators
-t_BIT_AND = r'&' 
+t_BIT_AND = r'&'
 t_BIT_OR = r'\|'
 t_BIT_XOR = r'\^'
 t_BIT_NOT = r'~'
@@ -155,7 +169,7 @@ def t_error(t):
 
 
 lexer = lex.lex();
- 
+
 inputStr = open(sys.argv[1], "r")
 data= ""
 for line in inputStr:
@@ -168,13 +182,13 @@ last_token = None
 # Tokenize input
 while True:
     tok = lexer.token()
-    if not tok: 
+    if not tok:
         break
 
     if(not symbols.get(tok.type)):
     	symbols[tok.type] = {'count':1,'lexemes':[tok.value]}
-    else: 
-		symbols[tok.type]['count']+=1 
+    else:
+		symbols[tok.type]['count']+=1
 		if(tok.value not in  symbols[tok.type]['lexemes']):
 			symbols[tok.type]['lexemes'] += [tok.value]
 
@@ -188,7 +202,7 @@ for tok in symbols:
 	currEntry.append(symbols[tok]['count'])
 	currEntry.append(symbols[tok]['lexemes'][0])
 	tabulateInput.append(currEntry)
-	
+
 	flag = 0
 	for lexeme in symbols[tok]['lexemes']:
 		if flag:
@@ -199,7 +213,7 @@ for tok in symbols:
 		currEntry = ['','']
 
 # now print the tabular formated string
-tabularFormatedString = tabulate(tabulateInput, headers=['Tokens', 'Occurance', 'Lexems'], tablefmt='orgtbl')
+# tabularFormatedString = tabulate(tabulateInput, headers=['Tokens', 'Occurance', 'Lexems'], tablefmt='orgtbl')
 # print "\n\n"
-print tabularFormatedString
+# print tabularFormatedString
 # print "\n\n"

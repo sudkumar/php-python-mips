@@ -1,5 +1,11 @@
 import os, sys, lexer, logging, ply.yacc as yacc, json
 
+from STManager import STManager
+from IR import IR
+
+stm = None
+ir = IR()
+
 tokens = lexer.tokens
 
 precedence = (
@@ -31,8 +37,19 @@ precedence = (
   )
 
 def p_start(p):
-    'start : stmt_list'
-    p[0] = {"start":[p[1]]}
+    'start : start_marker stmt_list'
+    p[0] = {"start":[p[2]]}
+    global stm
+    stm.pop()
+    print stm.root.symbols
+    global ir
+    print ir.tac
+
+
+def p_start_marker(p):
+    'start_marker : empty'
+    global stm
+    stm = STManager()
 
 def p_stmt_list(p):
     '''stmt_list : stmt_list top_stmt
@@ -67,7 +84,28 @@ def p_const_decls(p):
 def p_const_decl(p):
     '''const_decl : IDENTIFIER EQUAL expr
                             | IDENTIFIER'''
-    if (len(p) == 4) :
+    # SYMBOL TABLE STUFF
+    # lookup for the variable into symbol table
+    global stm
+    name = p[1]
+    sym = stm.lookup(name)
+    if not sym:
+        # if symbol not found, insert it into the table
+        stm.insert(name, None, 0)
+    else:
+        print "Redefined variable: "+name
+    if(len(p)==4):
+
+        if not p[3]["type"]:
+            print "Variable "+ p[3]["place"]+" used before assignment."
+        else:
+            # update the type and offset for the variable
+            stm.setAttr(name, "type", p[3]["type"])
+            stm.setAttr(name, "offset", p[3]["offset"])
+
+        global ir
+        ir.emit(name + " = " + p[3]["place"])
+
         p[0] = {"const_decl":[p[1],p[2],p[3]]}
     else:
         p[0] = p[1]
@@ -433,7 +471,18 @@ def p_reference_variable_array_offset(p):
                    | IDENTIFIER'''
 
     if(len(p)==2):
-        p[0] = p[1]
+        global stm
+        name = p[1]
+        attrs = stm.lookup(name)
+        symType = None
+        offset = 0
+        if not attrs:
+            print "name "+p[1]+" is not defined."
+            stm.insert(p[1], symType, offset)
+        else:
+            symType = attrs["type"]
+            offset = attrs["offset"]
+        p[0] = {"place": p[1], "type": symType, "offset": offset}
     else:
         p[0] = {"base_var":[p[1],p[2],p[3],p[4]]}
 
@@ -445,7 +494,34 @@ def p_dim_offset(p):
 def p_expr_assign(p):
     '''expr : variable EQUAL expr
           | variable EQUAL BIT_AND expr'''
+
+    # SYMBOL TABLE STUFF
+    # lookup for the variable into symbol table
+    global stm
+    name = p[1]["place"]
+    attrs = stm.lookup(name)
+    symType = None
+    offset = 0
+    if not attrs:
+        # if symbol not found, insert it into the table
+        print "undefined variable "+name
+        stm.insert(name, symType, offset)
+    else:
+        symType = attrs["type"]
+        offset = attrs["offset"]
+
     if(len(p)==4):
+        if not p[3]["type"]:
+            print "Variable "+ p[3]["place"]+" used before assignment."
+        if(symType and symType != p[3]["type"]):
+            print "type casting error for "+ str(name) + " and " + p[3]["place"]
+        else:
+            # update the type and offset for the variable
+            stm.setAttr(name, "type", p[3]["type"])
+            stm.setAttr(name, "offset", p[3]["offset"])
+
+        global ir
+        ir.emit(name + " = " + p[3]["place"])
         p[0] = {"expr":[p[1],p[2],p[3]]}
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
@@ -604,6 +680,8 @@ def p_exp_scalar(p):
           | NULL
           | TRUE
           | FALSE'''
+
+    # update attributes for expr
     p[0] = p[1]
 def p_expr_ternary_op(p):
     'expr : expr COND_OP expr COLON expr'
@@ -681,8 +759,7 @@ for line in inputStr:
 
 log = logging.getLogger()
 
-file = sys.argv[1]
-filename = file.split('test')[2]
-filename = filename.split('.')[0]
-result = parser.parse(data,debug=log)
-print result
+
+result = parser.parse(data,debug=0)
+# result = parser.parse(data,debug=log)
+# print result
