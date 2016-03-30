@@ -41,7 +41,7 @@ def p_start(p):
     p[0] = {"start":[p[2]]}
     global stm
     stm.pop()
-    print stm.root.symbols
+    # print stm.root.symbols
     global ir
     print "\n".join(ir.tac)
 
@@ -66,9 +66,9 @@ def p_top_stmt(p):
     '''top_stmt : stmt
                    | func_decl'''
     global ir
-    p[0] = p[1]
+    p[0] = {}
     try:
-        nextlist = p[1]["nextlist"]
+        p[0]["nextlist"] = p[1]["nextlist"]
     except:
         p[0]["nextlist"] = ir.makeList()
 #--------------------------------------------------------------------------------------------------------
@@ -159,6 +159,7 @@ def p_stmt_if(p):
     '''stmt : if_stmt
                | alt_if_stmt'''
     p[0] = p[1]
+
 def p_if_stmt(p):
     '''if_stmt : if_stmt_without_else %prec NOELSE
              | if_stmt_without_else ELSE stmt'''
@@ -292,14 +293,34 @@ def p_foreach_stmt(p):
 # --- SWITCH Case
 
 def p_stmt_switch(p):
-    'stmt : SWITCH LPAREN expr RPAREN switch_stmt'
-    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5]]}
+    'stmt : SWITCH LPAREN expr RPAREN goto_marker switch_stmt jump_marker'
+
+    global  ir
+    p[0] ={}
+    exprs = p[6]["expr"]
+    jumps = p[6]["jumps"]
+    default = p[6]["default"]
+    # backpack the goto_marker to current quad
+    ir.backpatch(p[5]["nextlist"], p[7]["quad"])
+    # emit the conditions for switch cases
+    for i in range(len(exprs)):
+        expr = exprs[i]
+        jump = jumps[i]
+        isDefault = default[i]
+        if not isDefault:
+            ir.emit("if "+p[3]["place"] + " == "+ str(expr["place"]) + " goto "+ str(jump))
+        else:
+            ir.emit("goto "+ str(jump))
+    p[0]["nextlist"] = p[6]["nextlist"]
+
 
 def p_switch_stmt(p):
     '''switch_stmt : LBRACE case_stmt RBRACE
                         | LBRACE SEMICOLON case_stmt RBRACE'''
+    p[0] = {}
     if(len(p)==4):
-        p[0] = {"switch_stmt":[p[1],p[2],p[3]]}
+        # pass the synthesized attributes
+        p[0] = p[2]
     else:
         p[0] = {"switch_stmt":[p[1],p[2],p[3],p[4]]}
 
@@ -313,14 +334,31 @@ def p_switch_stmt_colon(p):
 
 def p_case_stmt(p):
     '''case_stmt : empty
-                 | case_stmt CASE expr case_separator inner_stmts
-                 | case_stmt DEFAULT case_separator inner_stmts'''
+                 | case_stmt CASE expr case_separator jump_marker inner_stmts
+                 | case_stmt DEFAULT case_separator jump_marker inner_stmts'''
+    global ir
+    p[0] = {}
     if(len(p)==2):
-        p[0] = p[1]
-    elif(len(p)==6):
-        p[0] = {"case_stmt":[p[1],p[2],p[3],p[4],p[5]]}
+        # we are at empty state
+        # create an empty nextlist
+        p[0]["nextlist"] = ir.makeList()
+        p[0]["expr"] = []
+        p[0]["jumps"] = []
+        p[0]["default"] = []
     else:
-        p[0] = {"case_stmt":[p[1],p[2],p[3],p[4]]}
+        if(len(p)==7):
+            # attach the expression for later usage
+            p[0]["expr"] = p[1]["expr"] +  [p[3]]
+            p[0]["jumps"] = p[1]["jumps"] +  [p[5]["quad"]]
+            p[0]["default"] = p[1]["default"] + [False]
+            p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[6]["nextlist"])
+        else:
+            p[0]["expr"] = p[1]["expr"] +  ["Subhojit"]
+            p[0]["jumps"] = p[1]["jumps"] +  [p[4]["quad"]]
+            p[0]["default"] = p[1]["default"] + [True]
+            p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[5]["nextlist"])
+
+        # combine the next list of all the children
 
 def p_case_separator(p):
     '''case_separator : COLON
@@ -338,7 +376,7 @@ def p_stmt_break(p):
     global ir
     p[0] = {}
     if(len(p)==4):
-        p[0]["nextlist"] = ir.makeList(ir.nextquad)
+        p[0]["nextlist"] = p[2]["nextlist"]
     else:
         p[0] = {"stmt":[p[1],p[2],p[3]]}
 
@@ -425,28 +463,35 @@ def p_echo_expr_list(p):
 
 def p_stmt_block(p):
     'stmt : LBRACE inner_stmts RBRACE'
-    p[0] = {"stmt":[p[1],p[2],p[3]]}
+    p[0] = p[2]
 
 def p_stmt_empty(p):
     'stmt : SEMICOLON'
-    p[0] = p[1]
+    # p[0] = p[1]
 
 def p_stmt_expr(p):
     'stmt : expr SEMICOLON'
-    p[0] = {"stmt":[p[1],p[2]]}
+    p[0] = p[1]
 
 def p_inner_stmts(p):
     '''inner_stmts : inner_stmts inner_stmt
                             | empty'''
+    global ir
+    p[0] = {}
     if(len(p)==2):
-        p[0] = p[1]
+        p[0]["nextlist"] = ir.makeList()
     else:
-        p[0] = {"inner_stmts":[p[1],p[2]]}
+        p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[2]["nextlist"])
 
 def p_inner_stmt(p):
     '''inner_stmt : stmt
                | func_decl'''
-    p[0] = p[1]
+    global ir
+    p[0] = {}
+    try:
+        p[0]["nextlist"] = p[1]["nextlist"]
+    except:
+        p[0]["nextlist"] = ir.makeList()
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -821,7 +866,7 @@ def p_goto_marker(p):
     'goto_marker : empty'
     global ir
     p[0] ={}
-    p[0]["quad"] = ir.nextquad
+    p[0]["nextlist"] = ir.makeList(ir.nextquad)
     ir.emit("goto ")
 #--------------------------------------------------------------------------------------------------------
 
@@ -846,4 +891,4 @@ log = logging.getLogger()
 
 result = parser.parse(data,debug=0)
 # result = parser.parse(data,debug=log)
-print result
+# print result

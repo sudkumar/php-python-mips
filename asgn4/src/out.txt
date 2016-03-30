@@ -1,0 +1,13 @@
+$y = 10
+$x = 0
+goto 9
+$y = 1
+goto 12
+$y = 2
+goto 12
+$y = 3
+goto 12
+if $y == $x goto 3
+if $y == 1 goto 5
+goto 7
+$y = 11
