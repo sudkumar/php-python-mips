@@ -52,7 +52,7 @@ def p_start_marker(p):
     stm = STManager()
 
 def p_stmt_list(p):
-    '''stmt_list : top_stmt jump_marker stmt_list
+    '''stmt_list : stmt_list jump_marker top_stmt
                         | empty '''
     p[0] = {}
     global ir
@@ -166,7 +166,7 @@ def p_if_stmt(p):
     if(len(p)==4):
         p[0] = {"if_stmt":[p[1],p[2],p[3]]}
     else:
-        print str(len(p)) + 'sss'
+        # print str(len(p)) + 'sss'
         p[0] = {"nextlist": p[1]["nextlist"]}
 
 
@@ -208,16 +208,20 @@ def p_alt_if_stmt_without_else(p):
 # --- While Stmt
 
 def p_stmt_while(p):
-    'stmt : WHILE LPAREN expr RPAREN while_stmt'
-    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5]]}
+    'stmt : WHILE LPAREN jump_marker expr jump_marker RPAREN while_stmt goto_marker'
+    global ir
+    p[0] = {}
+    ir.backpatch(ir.mergeList(p[7]["nextlist"], p[8]["nextlist"]), p[3]["quad"])
+    ir.backpatch(p[4]["truelist"], p[5]["quad"])
+    p[0]["nextlist"] = p[4]["falselist"]
 
 def p_while_stmt(p):
     '''while_stmt : stmt
                        | COLON inner_stmts ENDWHILE SEMICOLON'''
     if(len(p)==2):
-        p[0] = {"while_stmt":[p[1]]}
+        p[0] = p[1]
     else:
-        p[0] = {"while_stmt":[p[1],p[2],p[3],p[4]]}
+        p[0] = p[2]
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -384,12 +388,15 @@ def p_stmt_break(p):
 
 #-- Continue--
 def p_stmt_continue(p):
-    '''stmt : CONTINUE SEMICOLON
-                 | CONTINUE expr SEMICOLON'''
-    if(len(p)==3):
-        p[0] = {"stmt":[p[1],p[2]]}
+    '''stmt : CONTINUE goto_marker SEMICOLON
+                 | CONTINUE expr  goto_marker SEMICOLON'''
+    global ir
+    p[0] = {}
+    if(len(p)==4):
+        p[0]["nextlist"] = p[2]["nextlist"]
     else:
         p[0] = {"stmt":[p[1],p[2],p[3]]}
+
 
 #-------------
 
@@ -474,14 +481,17 @@ def p_stmt_expr(p):
     p[0] = p[1]
 
 def p_inner_stmts(p):
-    '''inner_stmts : inner_stmts inner_stmt
+    '''inner_stmts : inner_stmts jump_marker inner_stmt
                             | empty'''
-    global ir
+
     p[0] = {}
-    if(len(p)==2):
-        p[0]["nextlist"] = ir.makeList()
+    global ir
+    if len(p) == 4 :
+        ir.backpatch(p[1]["nextlist"], p[2]["quad"])
+        p[0]["nextlist"] = p[3]["nextlist"]
     else:
-        p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[2]["nextlist"])
+        p[0]["nextlist"] = ir.makeList()
+
 
 def p_inner_stmt(p):
     '''inner_stmt : stmt
