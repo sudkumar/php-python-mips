@@ -638,7 +638,11 @@ def p_expr_assign_op(p):
           | variable DIVIDE_EQ expr
           | variable DOT_EQ expr
           | variable MOD_EQ expr'''
-    p[0] = {"expr":[p[1],p[2],p[3]]}
+    global ir
+    if p[1]["type"] != p[3]["type"]:
+        print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
+    ir.emit(p[1]["place"] + " = " + p[1]["place"] + " "+ p[2][0] + " "+ p[3]["place"])
+
 
 def p_expr_binary_op(p):
     '''expr : expr AND_OP expr
