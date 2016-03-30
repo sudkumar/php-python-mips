@@ -663,7 +663,17 @@ def p_expr_binary_op(p):
           | expr GREATER expr
           | expr GREATER_EQ expr
           | expr INSTANCEOF expr'''
-    p[0] = {"expr":[p[1],p[2],p[3]]}
+    global ir
+    name = ir.newTemp()
+    if p[1]["type"] != p[3]["type"]:
+        print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
+    ir.emit(name + " = " + p[1]["place"] + " "+ p[2] + " "+ p[3]["place"])
+    symType = p[1]["type"]
+    offset = p[1]["offset"]
+    global stm
+    stm.insert(name, symType, offset)
+
+    p[0] = {"place": name, "type": symType, "offset": offset}
 
 
 def p_expr_unary_op(p):
@@ -671,7 +681,15 @@ def p_expr_unary_op(p):
           | MINUS expr
           | BIT_NOT expr
           | NOT expr'''
-    p[0] = {"expr":[p[1],p[2]]}
+    global ir
+    name = ir.newTemp()
+    ir.emit(name + " = " + p[1] + " "+ p[2]["place"])
+    symType = p[2]["type"]
+    offset = p[2]["offset"]
+    global stm
+    stm.insert(name, symType, offset)
+
+    p[0] = {"place": name, "type": symType, "offset": offset}
 
 def p_exp_scalar(p):
     '''expr : CONST_DECIMAL
