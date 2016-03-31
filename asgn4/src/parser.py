@@ -162,27 +162,42 @@ def p_stmt_if(p):
 
 def p_if_stmt(p):
     '''if_stmt : if_stmt_without_else %prec NOELSE
-             | if_stmt_without_else ELSE stmt'''
-    if(len(p)==4):
-        p[0] = {"if_stmt":[p[1],p[2],p[3]]}
+             | if_stmt_without_else ELSE goto_marker jump_marker stmt'''
+    global ir
+    p[0] = {}
+    if(len(p)==6):
+        # if with else statement
+        # resolve the false list of if_stmt_without_else to go to else statement
+        ir.backpatch(p[1]["falselist"], p[4]["quad"])
+
+        # now pass the information from subtree to if_stmt
+        p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[5]["nextlist"])
+        p[0]["breaklist"] = ir.mergeList(p[1]["breaklist"], p[5]["breaklist"])
+        p[0]["continuelist"] = ir.mergeList(p[1]["continuelist"], p[5]["continuelist"])
     else:
         # print str(len(p)) + 'sss'
         # pass the information from if_stmt_without_else to if_stmt
         p[0] = p[1]
+        p[0]["nextlist"] = ir.mergeList(p[1]["falselist"], p[1]["nextlist"])
 
 
 def p_if_stmt_without_else(p):
     '''if_stmt_without_else : IF LPAREN expr RPAREN jump_marker stmt
-                          | if_stmt_without_else ELSEIF LPAREN expr RPAREN stmt'''
+                          | if_stmt_without_else ELSEIF goto_marker LPAREN expr RPAREN jump_marker stmt'''
     global ir
     p[0] = {}
     if(len(p)==7):
         ir.backpatch(p[3]["truelist"], p[5]["quad"])
-        p[0]["nextlist"] = ir.mergeList(p[3]["falselist"], p[6]["nextlist"])
+        p[0]["falselist"] = p[3]["falselist"]
+        p[0]["nextlist"] = p[6]["nextlist"]
         p[0]["breaklist"] = p[6]["breaklist"]
         p[0]["continuelist"] = p[6]["continuelist"]
-    # else:
-    #     p[0] = {"if_stmt_without_else":[p[1],p[2],p[3],p[4],p[5],p[6]]}
+    else:
+        ir.backpatch(p[5]["truelist"], p[7]["quad"])
+        p[0]["falselist"] = ir.mergeList(p[1]["falselist"], p[5]["falselist"])
+        p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[8]["nextlist"])
+        p[0]["breaklist"] = ir.mergeList(p[1]["breaklist"], p[8]["breaklist"])
+        p[0]["continuelist"] = ir.mergeList(p[1]["continuelist"], p[8]["continuelist"])
 
 
 def p_alt_if_stmt(p):
