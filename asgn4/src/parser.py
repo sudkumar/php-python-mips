@@ -167,7 +167,8 @@ def p_if_stmt(p):
         p[0] = {"if_stmt":[p[1],p[2],p[3]]}
     else:
         # print str(len(p)) + 'sss'
-        p[0] = {"nextlist": p[1]["nextlist"]}
+        # pass the information from if_stmt_without_else to if_stmt
+        p[0] = p[1]
 
 
 def p_if_stmt_without_else(p):
@@ -175,13 +176,11 @@ def p_if_stmt_without_else(p):
                           | if_stmt_without_else ELSEIF LPAREN expr RPAREN stmt'''
     global ir
     p[0] = {}
-    try:
-        nextlist = p[6]["nextlist"]
-    except:
-        p[6]["nextlist"] = ir.makeList()
     if(len(p)==7):
         ir.backpatch(p[3]["truelist"], p[5]["quad"])
         p[0]["nextlist"] = ir.mergeList(p[3]["falselist"], p[6]["nextlist"])
+        p[0]["breaklist"] = p[6]["breaklist"]
+        p[0]["continuelist"] = p[6]["continuelist"]
     # else:
     #     p[0] = {"if_stmt_without_else":[p[1],p[2],p[3],p[4],p[5],p[6]]}
 
@@ -211,9 +210,10 @@ def p_stmt_while(p):
     'stmt : WHILE LPAREN jump_marker expr jump_marker RPAREN while_stmt goto_marker'
     global ir
     p[0] = {}
-    ir.backpatch(ir.mergeList(p[7]["nextlist"], p[8]["nextlist"]), p[3]["quad"])
+    looplist = ir.mergeList(p[7]["continuelist"], ir.mergeList(p[7]["nextlist"], p[8]["nextlist"]))
+    ir.backpatch(looplist, p[3]["quad"])
     ir.backpatch(p[4]["truelist"], p[5]["quad"])
-    p[0]["nextlist"] = p[4]["falselist"]
+    p[0]["nextlist"] = ir.mergeList(p[4]["falselist"], p[7]["breaklist"])
 
 def p_while_stmt(p):
     '''while_stmt : stmt
@@ -355,12 +355,12 @@ def p_case_stmt(p):
             p[0]["expr"] = p[1]["expr"] +  [p[3]]
             p[0]["jumps"] = p[1]["jumps"] +  [p[5]["quad"]]
             p[0]["default"] = p[1]["default"] + [False]
-            p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[6]["nextlist"])
+            p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[6]["breaklist"])
         else:
             p[0]["expr"] = p[1]["expr"] +  ["Subhojit"]
             p[0]["jumps"] = p[1]["jumps"] +  [p[4]["quad"]]
             p[0]["default"] = p[1]["default"] + [True]
-            p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[5]["nextlist"])
+            p[0]["nextlist"] = ir.mergeList(p[1]["nextlist"], p[5]["breaklist"])
 
         # combine the next list of all the children
 
@@ -380,7 +380,7 @@ def p_stmt_break(p):
     global ir
     p[0] = {}
     if(len(p)==4):
-        p[0]["nextlist"] = p[2]["nextlist"]
+        p[0]["breaklist"] = p[2]["nextlist"]
     else:
         p[0] = {"stmt":[p[1],p[2],p[3]]}
 
@@ -393,7 +393,7 @@ def p_stmt_continue(p):
     global ir
     p[0] = {}
     if(len(p)==4):
-        p[0]["nextlist"] = p[2]["nextlist"]
+        p[0]["continuelist"] = p[2]["nextlist"]
     else:
         p[0] = {"stmt":[p[1],p[2],p[3]]}
 
@@ -488,20 +488,36 @@ def p_inner_stmts(p):
     global ir
     if len(p) == 4 :
         ir.backpatch(p[1]["nextlist"], p[2]["quad"])
+        # attach the information from inner_stmt to inner_stmts
         p[0]["nextlist"] = p[3]["nextlist"]
+        p[0]["breaklist"] = ir.mergeList(p[1]["breaklist"], p[3]["breaklist"])
+        p[0]["continuelist"] = ir.mergeList(p[1]["continuelist"], p[3]["continuelist"])
     else:
         p[0]["nextlist"] = ir.makeList()
-
+        p[0]["breaklist"] = ir.makeList()
+        p[0]["continuelist"] = ir.makeList()
 
 def p_inner_stmt(p):
     '''inner_stmt : stmt
                | func_decl'''
     global ir
     p[0] = {}
+    # get the nextlist if it exists other create one
     try:
         p[0]["nextlist"] = p[1]["nextlist"]
     except:
         p[0]["nextlist"] = ir.makeList()
+    # get the breaklist if there is any else create one
+    try:
+        p[0]["breaklist"] = p[1]["breaklist"]
+    except Exception as e:
+        p[0]["breaklist"] = ir.makeList()
+
+    # get the continuelist if there is any else create one
+    try:
+        p[0]["continuelist"] = p[1]["continuelist"]
+    except Exception as e:
+        p[0]["continuelist"] = ir.makeList()
 
 #--------------------------------------------------------------------------------------------------------
 
