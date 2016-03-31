@@ -341,15 +341,15 @@ def p_switch_stmt(p):
         # pass the synthesized attributes
         p[0] = p[2]
     else:
-        p[0] = {"switch_stmt":[p[1],p[2],p[3],p[4]]}
+        p[0] = p[3]
 
 def p_switch_stmt_colon(p):
     '''switch_stmt : COLON case_stmt ENDSWITCH SEMICOLON
                         | COLON SEMICOLON case_stmt ENDSWITCH SEMICOLON'''
     if(len(p)==5):
-        p[0] = {"switch_stmt":[p[1],p[2],p[3],p[4]]}
+        p[0] = p[2]
     else:
-        p[0] = {"switch_stmt":[p[1],p[2],p[3],p[4],p[5]]}
+        p[0] = p[3]
 
 def p_case_stmt(p):
     '''case_stmt : empty
@@ -841,8 +841,38 @@ def p_exp_scalar(p):
         ir.emit("goto ")
 
 def p_expr_ternary_op(p):
-    'expr : expr COND_OP expr COLON expr'
-    p[0] = {"expr":[p[1],p[2],p[3],p[4],p[5]]}
+    'expr : expr COND_OP jump_marker  expr goto_marker  jump_marker COLON expr'
+    global ir
+    global stm
+    p[0] = {}
+    p[0]["place"] = ir.newTemp()
+    # send the truelist to first expr
+    ir.backpatch(p[1]["truelist"], p[3]["quad"])
+    # send the falselist to second expr
+    ir.backpatch(p[1]["falselist"], p[6]["quad"])
+
+    # after evaluvating expressions, we have into two different variables
+    # p[4]["place"] and p[8]["place"]
+    # Now we need to assign these variables to p[0]["place"]
+    secondAsgnList = ir.makeList(ir.nextquad)
+    ir.emit("goto ")
+
+    # assgn to the first value
+    ir.backpatch(p[5]["nextlist"], ir.nextquad)
+    ir.emit(p[0]["place"] + " = " + p[4]["place"])
+
+    firstAsgnList = ir.makeList(ir.nextquad)
+    ir.emit("goto ")
+
+    # assgn to second value
+    ir.backpatch(secondAsgnList, ir.nextquad)
+    ir.emit(p[0]["place"] + " =  " + p[8]["place"])
+
+    ir.backpatch(firstAsgnList, ir.nextquad)
+
+    p[0]["type"] = p[4]["type"]
+    p[0]["offset"] = p[4]["offset"]
+    stm.insert(p[0]["place"], p[0]["type"], p[0]["offset"])
 
 def p_expr_pre_incdec(p):
     '''expr : INC variable
