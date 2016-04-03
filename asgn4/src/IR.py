@@ -27,12 +27,15 @@ class IR():
             return [_i]
         return []
 
-    def mergeList(self, _list1, _list2):
-        return _list1 + _list2
+    def mergeList(self, *_list):
+        merged = []
+        for list in _list:
+            merged += list
+        return merged
 
     def backpatch(self, _list, _i):
         for lineNumber in _list:
-            self.tac[lineNumber] = self.tac[lineNumber] + str(_i)
+            self.tac[lineNumber] = self.tac[lineNumber] + str(_i+1)
 
     def emitTmp(self, irLine):
         # split the line and get the parts

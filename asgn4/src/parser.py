@@ -225,7 +225,7 @@ def p_stmt_while(p):
     'stmt : WHILE LPAREN jump_marker expr jump_marker RPAREN while_stmt goto_marker'
     global ir
     p[0] = {}
-    looplist = ir.mergeList(p[7]["continuelist"], ir.mergeList(p[7]["nextlist"], p[8]["nextlist"]))
+    looplist = ir.mergeList(p[7]["continuelist"], p[7]["nextlist"], p[8]["nextlist"])
     ir.backpatch(looplist, p[3]["quad"])
     ir.backpatch(p[4]["truelist"], p[5]["quad"])
     p[0]["nextlist"] = ir.mergeList(p[4]["falselist"], p[7]["breaklist"])
@@ -250,8 +250,20 @@ def p_stmt_do_while(p):
 # --- for loop
 
 def p_stmt_for(p):
-    'stmt : FOR LPAREN for_expr SEMICOLON for_expr SEMICOLON for_expr RPAREN for_stmt'
-    p[0] = {"stmt":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9]]}
+    'stmt : FOR LPAREN for_expr SEMICOLON jump_marker for_expr SEMICOLON jump_marker for_expr goto_marker RPAREN jump_marker for_stmt goto_marker'
+    p[0] = {}
+    global ir
+    # set the true list of for_expr_2 to go to for_stmt
+    ir.backpatch(p[6]["truelist"], p[12]["quad"])
+
+    # put the update next to start of the for_expr_2 (conditional expression)
+    ir.backpatch(p[10]["nextlist"], p[5]["quad"])
+
+    # put the loop to update condition
+    looplist = ir.mergeList(p[13]["nextlist"], p[13]["continuelist"], p[14]["nextlist"])
+    ir.backpatch(looplist, p[8]["quad"])
+    p[0]["nextlist"] = ir.mergeList(p[6]["falselist"], p[13]["breaklist"])
+
 
 def p_for_expr(p):
     '''for_expr : empty
@@ -262,18 +274,19 @@ def p_for_expr(p):
 def p_non_empty_for_expr(p):
     '''non_empty_for_expr : non_empty_for_expr COMMA expr
                           | expr'''
-    if(len(p)==4):
-        p[0] = {"for_expr":[p[1],p[2],p[3]]}
-    else:
-        p[0] = {"for_expr":[p[1]]}
+    global ir
+    p[0] = {}
+    if(len(p)==2):
+        # it may be a conditional expr, so pass it on
+        p[0] = p[1]
 
 def p_for_stmt(p):
     '''for_stmt : stmt
                      | COLON inner_stmts ENDFOR SEMICOLON'''
     if(len(p)==2):
-        p[0] = {"for_stmt":[p[1]]}
+        p[0] = p[1]
     else:
-        p[0] = {"for_stmt":[p[1],p[2],p[3],p[4]]}
+        p[0] = p[2]
 
 #--------------------------------------------------------------------------------------------------------
 

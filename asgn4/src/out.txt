@@ -1,52 +1,12 @@
-$y = 10
-$z = 1
-if $y > 0 goto 4
-goto 6
-t1 = $y + 1
-goto 8
-t2 = $z + 2
-goto 10
-t3 = t1
-goto 11
-t3 =  t2
-$y = t3
-if $y == 0 goto 14
-goto 21
-$y = 3
-$y = $y + 4
-goto 21
-if $y != 0 goto 19
-goto 21
-$y = 1
-$y = 14
-$y = 10
-goto 27
-$y = 1
-goto 29
-$y = 2
-goto 29
-if $y == 1 goto 23
-goto 25
-t4 = - 1
-$y = t4
-if $y > 0 goto 33
-goto 51
-$y = $y - 1
-if $y > 10 goto 36
-goto 47
+$y = 0
+$z = 0
+if $y < 10 goto 5
+goto 12
+if $z > 10 goto 9
+goto 12
 $y = $y + 1
-if $y == 0 goto 39
-goto 42
-$y = 1
-goto 34
-goto 45
-t5 = - 1
-$y = t5
-goto 47
-$y = 10
-goto 34
-$y = 10
-goto 31
-$y = 2
-goto 31
+goto 3
+t1 = $y - 1
+$y = t1
+goto 7
 $y = 11
