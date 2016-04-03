@@ -124,25 +124,46 @@ def p_const_decl(p):
 # --- Function
 
 def p_func_decl(p):
-    'func_decl : FUNCTION STRING LPAREN params RPAREN LBRACE inner_stmts RBRACE'
-    p[0] = {"func_decl":[p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8]]}
+    'func_decl : FUNCTION goto_marker  STRING func_table_marker LPAREN jump_marker params RPAREN LBRACE inner_stmts RBRACE jump_marker'
+    global ir
+    global stm
+    p[0] = {}
+    # put the start goto to skip the function defination
+    ir.backpatch(p[2]["nextlist"], p[12]["quad"])
+    # remove the function table
+    procST = stm.pop()
+    stm.enterProc(p[3], p[6]["quad"], p[7]["numParams"], procST)
+
+def p_func_table_marker(p):
+    'func_table_marker : empty'
+    p[0] = {}
+    global stm
+    stm.push(stm.makeTable(stm.currActive))
 
 def p_params(p):
     '''params : params COMMA param
                       | param
                       | empty'''
+    p[0] = {}
     if(len(p)==2):
-        p[0] = p[1]
+        try:
+            paramsType = p[1]["type"]
+            p[0]["numParams"] = 1
+        except:
+            p[0]["numParams"] = 0
     else:
-        p[0] = {"params": [p[1],p[2],p[3]]}
+        p[0]["numParams"] = p[1]["numParams"] + p[3]["numParams"]
 
 def p_param(p):
     '''param : IDENTIFIER
                  | BIT_AND IDENTIFIER
                  | IDENTIFIER EQUAL scalar
                  | BIT_AND IDENTIFIER EQUAL scalar'''
+    global stm
+    p[0] ={}
     if(len(p)==2):
-        p[0] = {"param":[p[1]]}
+        stm.insert(p[1], "int", 4)
+        p[0]["type"] = "int"
 
     elif(len(p)==3):
         p[0] = {"param":[p[1],p[2]]}
@@ -432,10 +453,13 @@ def p_stmt_continue(p):
 def p_stmt_return(p):
     '''stmt : RETURN SEMICOLON
                  | RETURN expr SEMICOLON'''
+    global ir
+
     if(len(p)==3):
-        p[0] = {"stmt":[p[1],p[2]]}
+        ir.emit("ret")
     else:
-        p[0] = {"stmt":[p[1],p[2],p[3]]}
+        ir.emit("ret "+p[2]["place"])
+        p[0] = p[2]
 
 #-------------
 

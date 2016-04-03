@@ -39,11 +39,13 @@ class SymbolTable():
         @params _name {string} -- name of the procedure
         @params _procST {SymbolTable} -- symbol table for a procedure
     """
-    def enterProc(self, _name, _procST):
+    def enterProc(self, _name, _lineNumber, _numParams, _procST):
         # create a attribute's dictionary
         attrs = {}
         # attach the information about the _name in attrs
-        attrs["place"] = name
+        attrs["place"] = _name
+        attrs["lineNumber"] = _lineNumber
+        attrs["numParams"] = _numParams
         attrs["type"] = "proc"
         attrs["st"] = _procST
 

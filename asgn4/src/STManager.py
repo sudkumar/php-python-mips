@@ -79,6 +79,17 @@ class STManager():
     def insert(self, _name, _type, _offset):
         self.currActive.insert(_name, _type, _offset)
 
+
+    """ Enter a new entry for a procedure
+        Create a new entry for a procedure.
+        @params _name {string} -- name of the procedure
+        @params _lineNumber {int}  -- liner number where function is defined
+        @params _procST {SymbolTable} -- symbol table for a procedure
+    """
+    def enterProc(self, _name, _lineNumber, _numParams, _procST):
+        self.currActive.enterProc(_name, _lineNumber, _numParams, _procST)
+
+
     """ Set attribute
         set attributes for a symbol in symbol table
         @params _symbol {string} -- symbol for which attribute is to be set

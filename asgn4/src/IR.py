@@ -23,7 +23,7 @@ class IR():
 
 
     def makeList(self, _i=None):
-        if _i:
+        if _i != None:
             return [_i]
         return []
 

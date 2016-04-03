@@ -1,12 +1,4 @@
-$y = 0
-$z = 0
-if $y < 10 goto 5
-goto 12
-if $z > 10 goto 9
-goto 12
-$y = $y + 1
-goto 3
-t1 = $y - 1
-$y = t1
-goto 7
+goto 4
+t1 = $y + 1
+ret t1
 $y = 11
