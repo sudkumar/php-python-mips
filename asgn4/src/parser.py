@@ -314,9 +314,9 @@ def p_stmt_switch(p):
         jump = jumps[i]
         isDefault = default[i]
         if not isDefault:
-            ir.emit("if "+p[3]["place"] + " == "+ str(expr["place"]) + " goto "+ str(jump))
+            ir.emitCjump("==", p[3], expr, str(jump))
         else:
-            ir.emit("goto "+ str(jump))
+            ir.emitUjump(str(jump))
     p[0]["nextlist"] = p[6]["nextlist"]
 
 
@@ -783,8 +783,8 @@ def p_expr_binary_relop(p):
     p[0] = {}
     p[0]["truelist"] = ir.makeList(ir.nextquad)
     p[0]["falselist"] = ir.makeList(ir.nextquad+1)
-    ir.emit("if "+ p[1]["place"] + " "+ p[2] + " "+ p[3]["place"]+ " goto ")
-    ir.emit("goto ")
+    ir.emitCjump(p[2], p[1], p[3])
+    ir.emitUjump()
 
 def p_expr_unary_op(p):
     '''expr : PLUS expr
@@ -820,10 +820,10 @@ def p_exp_scalar(p):
     p[0] = p[1]
     if(p[1]["place"].upper() == "TRUE"):
         p[0]["truelist"] = ir.makeList(ir.nextquad)
-        ir.emit("goto ")
+        ir.emitUjump()
     elif(p[1]["place"].upper() == "FALSE"):
         p[0]["falselist"] = ir.makeList(ir.nextquad)
-        ir.emit("goto ")
+        ir.emitUjump()
 
 def p_expr_ternary_op(p):
     'expr : expr COND_OP jump_marker  expr goto_marker  jump_marker COLON expr'
@@ -840,14 +840,14 @@ def p_expr_ternary_op(p):
     # p[4]["place"] and p[8]["place"]
     # Now we need to assign these variables to p[0]["place"]
     secondAsgnList = ir.makeList(ir.nextquad)
-    ir.emit("goto ")
+    ir.emitUjump()
 
     # assgn to the first value
     ir.backpatch(p[5]["nextlist"], ir.nextquad)
     ir.emitCopy(p[0], p[4])
 
     firstAsgnList = ir.makeList(ir.nextquad)
-    ir.emit("goto ")
+    ir.emitUjump()
 
     # assgn to second value
     ir.backpatch(secondAsgnList, ir.nextquad)
@@ -923,7 +923,7 @@ def p_goto_marker(p):
     global ir
     p[0] ={}
     p[0]["nextlist"] = ir.makeList(ir.nextquad)
-    ir.emit("goto ")
+    ir.emitUjump()
 #--------------------------------------------------------------------------------------------------------
 
 def p_empty(p):

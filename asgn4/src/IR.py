@@ -25,7 +25,7 @@ class IR():
         tac = TAC(InstrType.copy, "=")
         tac.dest = _dest
         tac.src1 = _src
-        self.tac.append(_dest["place"] + " = " + _src["place"])
+        self.tac.append(tac.dest["place"] + " = " + tac.src["place"])
         self.nextquad += 1
 
     def emitAssgn(self, _op, _dest, _src1, _src2):
@@ -33,7 +33,22 @@ class IR():
         tac.dest = _dest
         tac.src1 = _src1
         tac.src2 = _src2
-        self.tac.append(_dest["place"] + " = " + _src1["place"] + " " + _op +" " + _src2["place"])
+        self.tac.append(tac.dest["place"] + " = " + tac.src1["place"] + " " + tac.op +" " + tac.src2["place"])
+        self.nextquad += 1
+
+
+    def emitCjump(self, _op, _src1, _src2, _target=None):
+        tac = TAC(InstrType.cjump, _op)
+        tac.src1 = _src1
+        tac.src2 = _src2
+        tac.target = _target if _target != None else ""
+        self.tac.append("if " + tac.src1["place"] + " " + tac.op +" " + tac.src2["place"] + " goto " + str(tac.target))
+        self.nextquad += 1
+
+    def emitUjump(self, _target=None):
+        tac = TAC(InstrType.ujump, "goto")
+        tac.target = _target if _target != None else ""
+        self.tac.append("goto "+ str(tac.target))
         self.nextquad += 1
 
     def makeList(self, _i=None):
