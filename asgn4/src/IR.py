@@ -16,6 +16,9 @@ class IR():
         self.temp = 0
 
 
+        # three address code in string format
+        self.strTac = []
+
 
     def emit(self, _line):
         self.tac.append(_line)
@@ -25,31 +28,55 @@ class IR():
         tac = TAC(InstrType.copy, "=")
         tac.dest = _dest
         tac.src1 = _src
-        self.tac.append(tac.dest["place"] + " = " + tac.src["place"])
-        self.nextquad += 1
+        self.addTac(tac, tac.dest["place"] + " = " + tac.src["place"])
 
     def emitAssgn(self, _op, _dest, _src1, _src2):
         tac = TAC(InstrType.assgn, _op)
         tac.dest = _dest
         tac.src1 = _src1
         tac.src2 = _src2
-        self.tac.append(tac.dest["place"] + " = " + tac.src1["place"] + " " + tac.op +" " + tac.src2["place"])
-        self.nextquad += 1
+
+        self.addTac(tac, tac.dest["place"] + " = " + tac.src1["place"] + " " + tac.op +" " + tac.src2["place"])
 
 
     def emitCjump(self, _op, _src1, _src2, _target=None):
         tac = TAC(InstrType.cjump, _op)
         tac.src1 = _src1
         tac.src2 = _src2
-        tac.target = _target if _target != None else ""
-        self.tac.append("if " + tac.src1["place"] + " " + tac.op +" " + tac.src2["place"] + " goto " + str(tac.target))
-        self.nextquad += 1
+        tac.target = _target
+
+        # make the target a string (for printing purpose only)
+        _target = _target if _target != None else ""
+        self.addTac(tac, "if " + tac.src1["place"] + " " + tac.op +" " + tac.src2["place"] + " goto " + str(_target))
 
     def emitUjump(self, _target=None):
         tac = TAC(InstrType.ujump, "goto")
-        tac.target = _target if _target != None else ""
-        self.tac.append("goto "+ str(tac.target))
+        tac.target = _target
+
+        # make the target a string (for printing purpose only)
+        _target = _target if _target != None else ""
+        self.addTac(tac, "goto "+ str(_target))
+
+
+    def emitRet(self, _src=None):
+        tac = TAC(InstrType.ret, "ret")
+        tac.src =_src
+        self.tac.append(tac)
+
+        # make the _src a string (for printing purpose only)
+        _src = _src if _src != None else {"place": ""}
+        self.addTac( tac,  "ret "+str(_src["place"]))
+
+
+    def addTac(self, _tac, _line):
+        self.tac.append(_tac)
+        self.strTac.append(_line)
         self.nextquad += 1
+
+
+
+    def printTac(self):
+        print "\n".join(self.strTac)
 
     def makeList(self, _i=None):
         if _i != None:
@@ -64,7 +91,8 @@ class IR():
 
     def backpatch(self, _list, _i):
         for lineNumber in _list:
-            self.tac[lineNumber] = self.tac[lineNumber] + str(_i)
+            self.tac[lineNumber].target = _i
+            self.strTac[lineNumber] = self.strTac[lineNumber] + str(_i)
 
     def emitTmp(self, irLine):
         # split the line and get the parts

@@ -43,7 +43,7 @@ def p_start(p):
     stm.pop()
     # print stm.root.symbols
     global ir
-    print "\n".join(ir.tac)
+    ir.printTac()
 
 
 def p_start_marker(p):
@@ -409,9 +409,9 @@ def p_stmt_return(p):
     global ir
 
     if(len(p)==3):
-        ir.emit("ret")
+        ir.emitRet()
     else:
-        ir.emit("ret "+p[2]["place"])
+        ir.emitRet(p[2])
         p[0] = p[2]
 
 #-------------
