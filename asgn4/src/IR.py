@@ -35,7 +35,7 @@ class IR():
 
     def backpatch(self, _list, _i):
         for lineNumber in _list:
-            self.tac[lineNumber] = self.tac[lineNumber] + str(_i+1)
+            self.tac[lineNumber] = self.tac[lineNumber] + str(_i)
 
     def emitTmp(self, irLine):
         # split the line and get the parts

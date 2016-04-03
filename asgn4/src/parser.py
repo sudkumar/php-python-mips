@@ -52,7 +52,7 @@ def p_start_marker(p):
     stm = STManager()
 
 def p_stmt_list(p):
-    '''stmt_list : stmt_list jump_marker top_stmt
+    '''stmt_list : top_stmt jump_marker stmt_list
                         | empty '''
     p[0] = {}
     global ir
@@ -71,53 +71,7 @@ def p_top_stmt(p):
         p[0]["nextlist"] = p[1]["nextlist"]
     except:
         p[0]["nextlist"] = ir.makeList()
-#--------------------------------------------------------------------------------------------------------
 
-# --- var $a, $b, $c
-
-def p_stmt_const(p):
-    'top_stmt : VAR const_decls SEMICOLON'
-    p[0] =  {"top_stmt": [p[1],p[2],p[3]]}
-    global ir
-    p[0]["nextlist"] = ir.makeList()
-
-
-def p_const_decls(p):
-    '''const_decls : const_decls COMMA const_decl
-                             | const_decl'''
-    if (len(p) == 4) :
-        p[0] = {"const_decls":[p[1],p[2],p[3]]}
-    else:
-        p[0] = p[1]
-
-def p_const_decl(p):
-    '''const_decl : IDENTIFIER EQUAL expr
-                            | IDENTIFIER'''
-    # SYMBOL TABLE STUFF
-    # lookup for the variable into symbol table
-    global stm
-    name = p[1]
-    sym = stm.lookup(name)
-    if not sym:
-        # if symbol not found, insert it into the table
-        stm.insert(name, None, 0)
-    else:
-        print "Redefined variable: "+name
-    if(len(p)==4):
-
-        if not p[3]["type"]:
-            print "Variable "+ p[3]["place"]+" used before assignment."
-        else:
-            # update the type and offset for the variable
-            stm.setAttr(name, "type", p[3]["type"])
-            stm.setAttr(name, "offset", p[3]["offset"])
-
-        global ir
-        ir.emit(name + " = " + p[3]["place"])
-
-        # p[0] = {"const_decl":[p[1],p[2],p[3]]}
-    # else:
-        # p[0] = p[1]
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -204,7 +158,7 @@ def p_if_stmt(p):
 
 def p_if_stmt_without_else(p):
     '''if_stmt_without_else : IF LPAREN expr RPAREN jump_marker stmt
-                          | if_stmt_without_else ELSEIF goto_marker LPAREN expr RPAREN jump_marker stmt'''
+                          | if_stmt_without_else ELSEIF goto_marker LPAREN jump_marker expr RPAREN jump_marker stmt'''
     global ir
     p[0] = {}
     if(len(p)==7):
@@ -214,11 +168,12 @@ def p_if_stmt_without_else(p):
         p[0]["breaklist"] = p[6]["breaklist"]
         p[0]["continuelist"] = p[6]["continuelist"]
     else:
-        ir.backpatch(p[5]["truelist"], p[7]["quad"])
-        p[0]["falselist"] = ir.mergeList(p[1]["falselist"], p[5]["falselist"])
-        p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[8]["nextlist"])
-        p[0]["breaklist"] = ir.mergeList(p[1]["breaklist"], p[8]["breaklist"])
-        p[0]["continuelist"] = ir.mergeList(p[1]["continuelist"], p[8]["continuelist"])
+        ir.backpatch(p[6]["truelist"], p[8]["quad"])
+        ir.backpatch(p[1]["falselist"], p[5]["quad"])
+        p[0]["falselist"] = p[6]["falselist"]
+        p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[9]["nextlist"])
+        p[0]["breaklist"] = ir.mergeList(p[1]["breaklist"], p[9]["breaklist"])
+        p[0]["continuelist"] = ir.mergeList(p[1]["continuelist"], p[9]["continuelist"])
 
 
 def p_alt_if_stmt(p):
@@ -284,8 +239,6 @@ def p_stmt_for(p):
     looplist = ir.mergeList(p[13]["nextlist"], p[13]["continuelist"], p[14]["nextlist"])
     ir.backpatch(looplist, p[8]["quad"])
     p[0]["nextlist"] = ir.mergeList(p[6]["falselist"], p[13]["breaklist"])
-
-
 def p_for_expr(p):
     '''for_expr : empty
                 | non_empty_for_expr'''
@@ -618,7 +571,6 @@ def p_reference_variable_array_offset(p):
         symType = None
         offset = 0
         if not attrs:
-            print "name "+p[1]+" is not defined."
             stm.insert(p[1], symType, offset)
         else:
             symType = attrs["type"]
@@ -633,23 +585,16 @@ def p_dim_offset(p):
     p[0] = p[1]
 
 def p_expr_assign(p):
-    '''expr : variable EQUAL expr
-          | variable EQUAL BIT_AND expr'''
+    '''expr : base_var EQUAL expr
+          | base_var EQUAL BIT_AND expr'''
 
     # SYMBOL TABLE STUFF
     # lookup for the variable into symbol table
     global stm
     name = p[1]["place"]
     attrs = stm.lookup(name)
-    symType = None
-    offset = 0
-    if not attrs:
-        # if symbol not found, insert it into the table
-        print "undefined variable "+name
-        stm.insert(name, symType, offset)
-    else:
-        symType = attrs["type"]
-        offset = attrs["offset"]
+    symType = attrs["type"]
+    offset = attrs["offset"]
 
     if(len(p)==4):
         if not p[3]["type"]:
