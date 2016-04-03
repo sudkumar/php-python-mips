@@ -178,20 +178,46 @@ def p_if_stmt_without_else(p):
 
 def p_alt_if_stmt(p):
     '''alt_if_stmt : alt_if_stmt_without_else ENDIF SEMICOLON
-                 | alt_if_stmt_without_else ELSE COLON inner_stmts ENDIF SEMICOLON'''
+                 | alt_if_stmt_without_else ELSE goto_marker jump_marker COLON inner_stmts ENDIF SEMICOLON'''
     if(len(p)==4):
-        p[0] = {"if_stmt":[p[1],p[2],p[3]]}
+        # p[0] = {"if_stmt":[p[1],p[2],p[3]]}
+        p[0] = p[1]
+        p[0]["nextlist"] = ir.mergeList(p[1]["falselist"], p[1]["nextlist"])
+
     else:
-        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}
+        p[0] = {}
+        # p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}
+        ir.backpatch(p[1]["falselist"], p[4]["quad"])
+
+        # 
+        p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[6]["nextlist"])
+        p[0]["breaklist"] = ir.mergeList(p[1]["breaklist"], p[6]["breaklist"])
+        p[0]["continuelist"] = ir.mergeList(p[1]["continuelist"], p[6]["continuelist"])
+
 
 def p_alt_if_stmt_without_else(p):
-    '''alt_if_stmt_without_else : IF LPAREN expr RPAREN COLON inner_stmts
-                              | alt_if_stmt_without_else ELSEIF LPAREN expr RPAREN COLON inner_stmts'''
-    if(len(p)==7):
-        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}
-    else:
-        p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6],p[7]]}
+    '''alt_if_stmt_without_else : IF LPAREN expr RPAREN COLON jump_marker inner_stmts
+                              | alt_if_stmt_without_else ELSEIF goto_marker LPAREN jump_marker expr RPAREN COLON jump_marker inner_stmts'''
 
+    if(len(p)==8):
+        # p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6]]}
+        p[0] = {}
+        ir.backpatch(p[3]["truelist"], p[6]["quad"])
+        p[0]["falselist"] = p[3]["falselist"]
+        p[0]["nextlist"] = p[7]["nextlist"]
+        p[0]["breaklist"] = p[7]["breaklist"]
+        p[0]["continuelist"] = p[7]["continuelist"]
+ # | if_stmt_without_else ELSEIF goto_marker LPAREN jump_marker expr RPAREN jump_marker stmt'''
+ 
+    else:
+        p[0] = {}
+        # p[0] = {"if_stmt":[p[1],p[2],p[3],p[4],p[5],p[6],p[7]]}
+        ir.backpatch(p[6]["truelist"], p[9]["quad"])
+        ir.backpatch(p[1]["falselist"], p[5]["quad"])
+        p[0]["falselist"] = p[6]["falselist"]
+        p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[10]["nextlist"])
+        p[0]["breaklist"] = ir.mergeList(p[1]["breaklist"], p[10]["breaklist"])
+        p[0]["continuelist"] = ir.mergeList(p[1]["continuelist"], p[10]["continuelist"])
 
 #--------------------------------------------------------------------------------------------------------
 

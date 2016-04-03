@@ -1,68 +1,25 @@
-$z = 0
-goto 4
-t1 = $y + 1
-ret t1
+$a = 30
+if $a == 5 goto 3
+goto 6
+t1 = $a * 5
+$a = t1
+goto 13
+if $a == 6 goto 8
+goto 11
+t2 = $a * 6
+$a = t2
+goto 13
+t3 = $a * 30
+$a = t3
 $y = 0
 $z = 0
-if $y < 10 goto 8
-goto 15
-if $z > 10 goto 12
-goto 15
+if $y < 10 goto 17
+goto 24
+if $z > 10 goto 21
+goto 24
 $y = $y + 1
-goto 6
-t2 = $y - 1
-$y = t2
-goto 10
-$z = 1
-$y = 1
-if $y > 0 goto 19
-goto 21
-t3 = $y + 1
-goto 23
-t4 = $z + 2
-goto 25
-t5 = t3
-goto 26
-t5 = t4
-$y = t5
-if $y == 0 goto 29
-goto 32
-$y = 3
-$y = $y + 4
-goto 34
-$y = 1
-$y = 14
-$y = 10
-goto 42
-$y = 1
-goto 45
-$y = $z
-goto 45
-$y = 2
-goto 45
-if $y == 1 goto 36
-if $y == $z goto 38
-goto 40
-t6 = 0 - 1
-$y = t6
-if $y > 0 goto 49
-goto 67
-$y = $y - 1
-if $y > 10 goto 52
-goto 63
-$y = $y + 1
-if $y == 0 goto 55
-goto 58
-$y = 1
-goto 50
-goto 61
-t7 = 0 - 1
-$y = t7
-goto 63
-$y = 10
-goto 50
-$y = 10
-goto 47
-$y = 2
-goto 47
+goto 15
+t4 = $y - 1
+$y = t4
+goto 19
 $y = 11
