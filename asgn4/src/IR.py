@@ -21,6 +21,20 @@ class IR():
         self.tac.append(_line)
         self.nextquad += 1
 
+    def emitCopy(self, _dest, _src):
+        tac = TAC(InstrType.copy, "=")
+        tac.dest = _dest
+        tac.src1 = _src
+        self.tac.append(_dest["place"] + " = " + _src["place"])
+        self.nextquad += 1
+
+    def emitAssgn(self, _op, _dest, _src1, _src2):
+        tac = TAC(InstrType.assgn, _op)
+        tac.dest = _dest
+        tac.src1 = _src1
+        tac.src2 = _src2
+        self.tac.append(_dest["place"] + " = " + _src1["place"] + " " + _op +" " + _src2["place"])
+        self.nextquad += 1
 
     def makeList(self, _i=None):
         if _i != None:

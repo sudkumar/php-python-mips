@@ -607,7 +607,7 @@ def p_expr_assign(p):
             stm.setAttr(name, "offset", p[3]["offset"])
 
         global ir
-        ir.emit(name + " = " + p[3]["place"])
+        ir.emitCopy(p[1], p[3])
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
 
@@ -726,7 +726,8 @@ def p_expr_assign_op(p):
     global ir
     if p[1]["type"] != p[3]["type"]:
         print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
-    ir.emit(p[1]["place"] + " = " + p[1]["place"] + " "+ p[2][0] + " "+ p[3]["place"])
+    ir.emitAssgn(p[2][0], p[1], p[1], p[3])
+    p[0] = p[1]
 
 
 def p_expr_arith(p):
@@ -745,13 +746,13 @@ def p_expr_arith(p):
     name = ir.newTemp()
     if p[1]["type"] != p[3]["type"]:
         print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
-    ir.emit(name + " = " + p[1]["place"] + " "+ p[2] + " "+ p[3]["place"])
     symType = p[1]["type"]
     offset = p[1]["offset"]
     global stm
     stm.insert(name, symType, offset)
-
     p[0] = {"place": name, "type": symType, "offset": offset}
+
+    ir.emitAssgn(p[2], p[0], p[1], p[3])
 
 def p_expr_binary_op(p):
     '''expr : expr AND_OP jump_marker expr
@@ -798,13 +799,15 @@ def p_expr_unary_op(p):
     else:
         global ir
         name = ir.newTemp()
-        ir.emit(name + " = " + p[1] + " "+ p[2]["place"])
         symType = p[2]["type"]
         offset = p[2]["offset"]
         global stm
         stm.insert(name, symType, offset)
 
         p[0] = {"place": name, "type": symType, "offset": offset}
+        ir.emitAssgn( p[1], p[0],
+            {"place": "0", "type": "CONST_DECIMAL", "offset": 4},
+            p[2])
 
 def p_exp_scalar(p):
     '''expr : CONST_DECIMAL
@@ -841,14 +844,14 @@ def p_expr_ternary_op(p):
 
     # assgn to the first value
     ir.backpatch(p[5]["nextlist"], ir.nextquad)
-    ir.emit(p[0]["place"] + " = " + p[4]["place"])
+    ir.emitCopy(p[0], p[4])
 
     firstAsgnList = ir.makeList(ir.nextquad)
     ir.emit("goto ")
 
     # assgn to second value
     ir.backpatch(secondAsgnList, ir.nextquad)
-    ir.emit(p[0]["place"] + " =  " + p[8]["place"])
+    ir.emitCopy(p[0], p[8])
 
     ir.backpatch(firstAsgnList, ir.nextquad)
 
