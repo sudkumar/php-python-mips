@@ -667,9 +667,9 @@ def p_expr_print(p):
 def p_empty(p):
     'empty : '
     p[0] = ''
-def p_error(t):
-    if t:
-        raise SyntaxError('invalid syntax', (None, t.lineno, None, t))
+def p_error(p):
+    if p:
+        raise SyntaxError('invalid syntax', (None, p.lineno, None, p))
     else:
         raise SyntaxError('unexpected EOF while parsing', (None, None, None, None))
 
