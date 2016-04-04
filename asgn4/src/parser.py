@@ -988,16 +988,19 @@ def p_error(t):
     else:
         raise SyntaxError('unexpected EOF while parsing', (None, None, None, None))
 
-parser = yacc.yacc(debug=True)
+def runIR():
+    parser = yacc.yacc(debug=True)
 
-inputStr = open(sys.argv[1], "r")
-data= ""
-for line in inputStr:
-  data += (line)
+    inputStr = open(sys.argv[1], "r")
+    data= ""
+    for line in inputStr:
+      data += (line)
 
-log = logging.getLogger()
+    log = logging.getLogger()
 
 
-result = parser.parse(data,debug=0)
-# result = parser.parse(data,debug=log)
-# print result
+    result = parser.parse(data,debug=0)
+    # result = parser.parse(data,debug=log)
+    # print result
+if __name__ == '__main__':
+    runIR()
