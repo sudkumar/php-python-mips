@@ -565,22 +565,42 @@ def p_variable(p):
 
 def p_func_call(p):
     'func_call : STRING LPAREN func_params RPAREN'
-    p[0] = {"func_call":[p[1],p[2],p[3],p[4]]}
+    # p[0] = {"func_call":[p[1],p[2],p[3],p[4]]}
+    global stm
+    global ir
+    name = p[1]
+    attrs = stm.lookup(name)
+    if(not attrs):
+        print 'undefined function ' + name + '!'
+    else:
+        tmp = ir.newTemp()
+        p[0] = {"place" : tmp , "type": "int" , "offset" : 4}
+        ir.emitCall(attrs["lineNumber"], p[3]["numParams"],p[0])
 
 def p_func_params(p):
     '''func_params : func_params COMMA func_param
                                   | func_param
                                   | empty'''
+    p[0] = {}
     if(len(p)==2):
-        p[0] = p[1]
+        try:
+            tmp = p[1]["place"] 
+            p[0]["numParams"] = 1
+        except:
+            p[0]["numParams"] = 0            
     else:
-        p[0] = {"func_params":[p[1],p[2],p[3]]}
+        p[0]["numParams"]  = p[1]["numParams"] + p[3]["numParams"]
+        # p[0] = {"func_params":[p[1],p[2],p[3]]}
 
 def p_func_param(p):
     '''func_param : expr
                     | BIT_AND variable'''
+    global ir
+    p[0] = {}
     if(len(p)==2):
+        ir.emitParams(p[1])
         p[0] = p[1]
+        p[0]["numParams"] =  1
     else:
         p[0] = {"func_param":[p[1],p[2]]}
 

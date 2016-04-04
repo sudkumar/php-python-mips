@@ -57,6 +57,21 @@ class IR():
         _target = _target if _target != None else ""
         self.addTac(tac, "goto "+ str(_target))
 
+    def emitCall(self, _target, _nParams, _returnVal):
+        tac = TAC(InstrType.call, "call")
+        tac.target = _target
+        tac.src1 = _nParams
+        tac.src2 = _returnVal
+        # make the target a string (for printing purpose only)
+
+        self.addTac(tac, "call "+ str(_target) + " "+str(_nParams) + " " + str(_returnVal["place"]))
+
+    def emitParams(self, _src):
+        tac = TAC(InstrType.params, "params")
+        tac.src =_src
+        self.tac.append(tac)
+
+        self.addTac( tac,  "params "+str(_src["place"]))
 
     def emitRet(self, _src=None):
         tac = TAC(InstrType.ret, "ret")
@@ -66,6 +81,7 @@ class IR():
         # make the _src a string (for printing purpose only)
         _src = _src if _src != None else {"place": ""}
         self.addTac( tac,  "ret "+str(_src["place"]))
+
 
 
     def addTac(self, _tac, _line):

@@ -10,5 +10,5 @@
         $c = $a + $b;
         return $c;
     }
-    sum($a,$b);
+    $c = sum($a,$b);
  ?>

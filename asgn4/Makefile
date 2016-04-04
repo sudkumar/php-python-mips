@@ -1,3 +1,4 @@
+
 all:
 	$(MAKE) -C src all
 	echo '#!/usr/bin/env python'  | cat - irgen.zip > irgen
