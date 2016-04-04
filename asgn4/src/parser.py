@@ -484,15 +484,20 @@ def p_static_var(p):
 #--- ECHO ----
 def p_stmt_echo(p):
     'stmt : ECHO echo_expr_list SEMICOLON'
-    p[0] = {"stmt":[p[1],p[2],p[3]]}
-
+    # p[0] = {"stmt":[p[1],p[2],p[3]]}
+    global ir
+    ir.emitEcho()
+    p[0] = p[2]
 def p_echo_expr_list(p):
     '''echo_expr_list : echo_expr_list COMMA expr
                       | expr'''
     if(len(p)==4):
         p[0] = {"echo_expr_list":[p[1],p[2],p[3]]}
     else:
+        global ir
+        ir.emitParams(p[1])
         p[0] = p[1]
+        p[0]["numParams"] = 1
 #-------------
 
 #--------------------------------------------------------------------------------------------------------
@@ -908,12 +913,14 @@ def p_expr_ternary_op(p):
 def p_expr_pre_incdec(p):
     '''expr : INC variable
           | DEC variable'''
-    p[0] = {"expr":[p[1],p[2]]}
+    global ir
+    ir.emitAssgn(p[1][0], p[2], p[2], {"place":"1", "type": "int", "offset": 4})
+    p[0] = p[2]
 
 def p_expr_post_incdec(p):
     '''expr : variable INC
           | variable DEC'''
-    p[0] = {"expr":[p[1],p[2]]}
+    p[0] = p[1]
 
 def p_expr_empty(p):
     'expr : EMPTY LPAREN expr RPAREN'
