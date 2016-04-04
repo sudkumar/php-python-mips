@@ -118,7 +118,7 @@ def p_param(p):
     if(len(p)==2):
         stm.insert(p[1], "int", 4)
         p[0]["type"] = "int"
-
+        p[0]["numParams"] = 1
     elif(len(p)==3):
         p[0] = {"param":[p[1],p[2]]}
     elif(len(p)==4):
