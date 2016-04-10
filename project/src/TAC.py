@@ -11,7 +11,7 @@ class TAC():
         self.target = None     # an target. my be integer or a label
 
     def updateTarget(self, nt):
-        self._target = nt
+        self.target = nt
 
     @property
     def type(self):

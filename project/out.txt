@@ -1,0 +1,27 @@
+$a = 30
+$b = 10
+if $a > 25 goto 4
+goto 6
+t1 = $a - 10
+goto 8
+t2 = $b + 5
+goto 10
+t3 = t1
+goto 11
+t3 = t2
+$c = t3
+goto 19
+t4 = $a + 1
+$c = t4
+ret $a
+t5 = $a + $b
+$c = t5
+ret $c
+params $a
+params $b
+call 13 2 t6
+$c = t6
+params $c
+echo
+[<FlowGraph.Node instance at 0x2b17092a0098>, <FlowGraph.Node instance at 0x2b170916fd88>, <FlowGraph.Node instance at 0x2b170916f0e0>, <FlowGraph.Node instance at 0x2b170916f440>, <FlowGraph.Node instance at 0x2b170916fcf8>, <FlowGraph.Node instance at 0x2b170916fef0>, <FlowGraph.Node instance at 0x2b17091c5170>, <FlowGraph.Node instance at 0x2b17091c5050>, <FlowGraph.Node instance at 0x2b1709194518>, <FlowGraph.Node instance at 0x2b1709194950>, <FlowGraph.Node instance at 0x2b1709194290>, <FlowGraph.Node instance at 0x2b1709194cb0>, <FlowGraph.Node instance at 0x2b1709194dd0>]
+{'13': 7}

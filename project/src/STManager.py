@@ -12,7 +12,8 @@ class STManager():
         self.root = ST()
         # intialize the stack of symbol tables for activation record
         self.activeSTs = [self.root]
-
+        # table of funcitons
+        self.ftable = {};
 
 
     """ Make Symbol Table
@@ -87,6 +88,11 @@ class STManager():
         @params _procST {SymbolTable} -- symbol table for a procedure
     """
     def enterProc(self, _name, _lineNumber, _numParams, _procST):
+        self.ftable[_lineNumber] = {
+            "place": _name,
+            "numParams": _numParams,
+            "st": _procST
+        }
         self.currActive.enterProc(_name, _lineNumber, _numParams, _procST)
 
 

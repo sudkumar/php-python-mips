@@ -33,14 +33,17 @@ class FlowGraph():
         # Generate the basic blocks
         bbs = BBGen(tac)
 
-        # get the functions dictionary
-        self._fns = bbs._fns
 
         # container for all block nodes
         self._blockNodes = []
 
         # add block nodes
         self.addNodes(tac, bbs._leaders)
+
+        # get the functions dictionary
+        self._fns ={}
+        for ln in bbs._fns:
+            self._fns[str(ln)] = bbs._leaders.index(ln)
 
         # add the links between nodes
         self.addLinks(bbs._leaders)
@@ -55,9 +58,9 @@ class FlowGraph():
         for i in range(countLeaders):
             # create a new node with content of current block
             if i < countLeaders-1 :
-                node = Node(tac[leaders[i]-1:(leaders[i+1]-1)])   # still a leader is remaining
+                node = Node(tac[leaders[i]:(leaders[i+1])])   # still a leader is remaining
             else:       
-                node = Node(tac[leaders[i]-1:])          # this is the last leader
+                node = Node(tac[leaders[i]:])          # this is the last leader
 
             self._blockNodes.append(node)
 
@@ -67,7 +70,6 @@ class FlowGraph():
         exitNode = self._blockNodes[-1]
         nodes = self._blockNodes
         countLeaders = len(nodes)
-
         for i in range(countLeaders-1):
             # at start or end
             if i == 0:
@@ -79,21 +81,13 @@ class FlowGraph():
             ltac = nodes[i]._block[-1]
 
             if ltac.type in JumpInstructions:
+                if ltac.type == InstrType.ret:
+                    continue
+
                 # it's a jump instruction, so get the target `leader` and add that to my successor  
-                jumpTarget = ltac.target
-                try:
-                    jumpTargetInt = int(jumpTarget)
-                except ValueError, e:
-                    # raise e
-                    # It's a function label, so get it from bbs
-                    jumpTargetInt = self._fns[jumpTarget]
-                    # update the functions dictionary to point to a block node
-                    self._fns[jumpTarget] = "B"+str(leaders.index(jumpTargetInt)+1)
-                finally:
-                    # append the node
-                    nodes[i].addSucc(nodes[leaders.index(jumpTargetInt)])
-                    # update the target to point to the successor instead of line number   
-                    ltac.updateTarget("B"+str(leaders.index(jumpTargetInt)+1))
+                nodes[i].addSucc(nodes[leaders.index(ltac.target)])
+                # update the target to point to the successor instead of line number   
+                ltac.updateTarget("B"+str(leaders.index(ltac.target)))
 
                 # check if it a conditional jump instructions
                 if ltac.type == InstrType.cjump:

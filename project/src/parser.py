@@ -42,12 +42,9 @@ def p_start(p):
     stm.pop()
     # print stm.root.symbols
     global ir
-    print len(ir.strTac)
     p[0] = {}
     p[0]["ir"] = ir
     p[0]["stm"] = stm
-    print len(p[0]["ir"].strTac)
-
 
 def p_start_marker(p):
     'start_marker : empty'
@@ -657,6 +654,7 @@ def p_expr_assign(p):
             print "type casting error for "+ str(name) + " and " + p[3]["place"]
         else:
             # update the type and offset for the variable
+            stm.setAttr(name, "place", name)
             stm.setAttr(name, "type", p[3]["type"])
             stm.setAttr(name, "offset", p[3]["offset"])
 
@@ -804,6 +802,7 @@ def p_expr_arith(p):
     offset = p[1]["offset"]
     global stm
     stm.insert(name, symType, offset)
+
     p[0] = {"place": name, "type": symType, "offset": offset}
 
     ir.emitAssgn(p[2], p[0], p[1], p[3])
@@ -1004,7 +1003,8 @@ def runIR():
 
     result = parser.parse(data,debug=0)
     # result = parser.parse(data,debug=log)
-    print result["ir"].printTac()
+    return result
 
 if __name__ == '__main__':
-    runIR()
+    result = runIR()
+    result["ir"].printTac()

@@ -20,10 +20,6 @@ class IR():
         self.strTac = []
 
 
-    def emit(self, _line):
-        self.tac.append(_line)
-        self.nextquad += 1
-
     def emitCopy(self, _dest, _src):
         tac = TAC(InstrType.copy, "=")
         tac.dest = _dest
@@ -74,14 +70,11 @@ class IR():
     def emitParams(self, _src):
         tac = TAC(InstrType.params, "params")
         tac.src =_src
-        self.tac.append(tac)
-
         self.addTac( tac,  "params "+str(_src["place"]))
 
     def emitRet(self, _src=None):
         tac = TAC(InstrType.ret, "ret")
         tac.src =_src
-        self.tac.append(tac)
 
         # make the _src a string (for printing purpose only)
         _src = _src if _src != None else {"place": ""}

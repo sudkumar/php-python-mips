@@ -30,34 +30,38 @@ class BBGen():
 
     def __init__(self, tacs):
         self._leaders = []                 # initialize the empty leaders array
-        self._fns = {}                      # map the function label to it's leader's line number
+        self._fns = []                      # map the function label to it's leader's line number
         countIRLines = len(tacs)        # get the number of total lines in ir
         # loop through all the lines and, get and store all the `leaders` in leaders
         i = 0
         while i < countIRLines:
             tac = tacs[i]       # parse the current line
             opType = tac.type
-
             if(i == 0):
-                self.addLeader(int(tac.lineNumber))    # add the first line to leaders
+                self.addLeader(i)    # add the first line to leaders
             # check for instruction type to be a label
-            if(opType == InstrType.label):
-                self._fns[tac.target] = int(tac.lineNumber)   # map the line to label
-                self.addLeader(tac.lineNumber)       # it was a label, so is a `leader`
+            # if(opType == InstrType.label):
+                # self._fns[tac.target] = int(tac.lineNumber)   # map the line to label
+                # self.addLeader(tac.lineNumber)       # it was a label, so is a `leader`
             
             # check for instruction type to be a jump
             elif(opType in JumpInstructions):
-                # get the jump target of this line, as it'll be a `leader`, must be an integer
-                self.addLeader(tac.target)
+                if(opType != InstrType.ret):
+                    # get the jump target of this line, as it'll be a `leader`, must be an integer
+                    self.addLeader(tac.target)
+                
+                if(opType == InstrType.call ):
+                    if(not tac.target in self._fns):
+                        self._fns.append(tac.target)
 
                 # it was a jump statement, so next line will be the `leader` if it exists
-                i += 1
-                if i < countIRLines:
-                    self.addLeader(tacs[i].lineNumber) 
-                    continue 
-                else:
-                    break                                   # reached at end of file
-
+                if (opType in [InstrType.cjump, InstrType.ujump, InstrType.ret, InstrType.call]):
+                    i += 1
+                    if i < countIRLines:
+                        self.addLeader(i) 
+                        continue 
+                    else:
+                        break                                   # reached at end of file
             i += 1      # go to next line
 
         # finally sort the `leaders` 
