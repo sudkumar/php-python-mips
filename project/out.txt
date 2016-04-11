@@ -1,27 +1,55 @@
-$a = 30
-$b = 10
-if $a > 25 goto 4
-goto 6
-t1 = $a - 10
-goto 8
-t2 = $b + 5
-goto 10
-t3 = t1
-goto 11
-t3 = t2
+t1 = 10
+t2 = 20
+t3 = t1 + t2
 $c = t3
-goto 19
-t4 = $a + 1
-$c = t4
-ret $a
-t5 = $a + $b
-$c = t5
-ret $c
-params $a
-params $b
-call 13 2 t6
-$c = t6
-params $c
-echo
-[<FlowGraph.Node instance at 0x2b17092a0098>, <FlowGraph.Node instance at 0x2b170916fd88>, <FlowGraph.Node instance at 0x2b170916f0e0>, <FlowGraph.Node instance at 0x2b170916f440>, <FlowGraph.Node instance at 0x2b170916fcf8>, <FlowGraph.Node instance at 0x2b170916fef0>, <FlowGraph.Node instance at 0x2b17091c5170>, <FlowGraph.Node instance at 0x2b17091c5050>, <FlowGraph.Node instance at 0x2b1709194518>, <FlowGraph.Node instance at 0x2b1709194950>, <FlowGraph.Node instance at 0x2b1709194290>, <FlowGraph.Node instance at 0x2b1709194cb0>, <FlowGraph.Node instance at 0x2b1709194dd0>]
-{'13': 7}
+t4 = 12342340
+t5 = $c + t4
+$b = t5
+t6 = 112
+$a = t6
+t7 = 1
+t8 = $a + t7
+$b = t8
+t9 = 1
+t10 = $a + t9
+$a = t10
+t11 = 1
+t12 = $b + t11
+$a = t12
+	.text
+	.globl main
+
+main:
+
+B1:
+	li $t0, 10
+	li $t1, 20
+	add $t2, $t0, $t1
+	li $t3, 12342340
+	sw $t1, t2
+	add $t1, $t2, $t3
+	sw $t3, t4
+	li $t3, 112
+	li $t3, 1
+	sw $t0, t1
+	add $t0, $t3, $t3
+	li $t3, 1
+	sw $t2, t3
+	sw $t2, $c
+	add $t2, $t3, $t3
+	li $t3, 1
+	sw $t2, t10
+	sw $t2, $a
+	add $t2, $t0, $t3
+	sw $t1, t5
+	sw $t0, $b
+	sw $t3, t6
+	sw $t2, $a
+	sw $t3, t7
+	sw $t0, t8
+	sw $t3, t9
+	sw $t3, t11
+	sw $t2, t12
+	j _exit_
+
+	.data

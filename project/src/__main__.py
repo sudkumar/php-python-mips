@@ -2,7 +2,9 @@
 
 
 from parser import runIR
-from FlowGraph import FlowGraph
+from CodeGen import CodeGen
+from Config import *
+from Lib import Lib
 
 def printStm(root):
     for sym in root.symbols.keys():
@@ -17,8 +19,31 @@ if __name__ == '__main__':
     ir = result["ir"]
     ir.printTac()
     stm = result["stm"]
-    # result["ir"].printTac()
-    fg = FlowGraph(ir.tac)
-    print fg._blockNodes
-    print fg._fns
+    code = CodeGen(ir, stm)
+    print "\t.text"
+    print "\t.globl main\n"
+    print "main:\n"
+    codeBlocks = code._codeBlocks
+    # add the library functions
+    # Now add the generated block by code generator
+    i = 1
+    for node in codeBlocks:   
+        print "B"+str(i)+":"
+        print "\t"+"\n\t".join(node)
+        i += 1
+
+    print "\tj "+LibFns["exit"]
+
+    # lib = Lib()
+    # instrs = lib.genFns()
+    # for ins in instrs.keys():
+    #    print str(ins)+":"
+    #    print "\t"+"\n\t".join(instrs[ins])
+
+
+
+    print "\n\t.data"
+    for var in code._globalVars:
+        print "g_"+str(var) + ":\t.word\t0"
+    
     

@@ -18,7 +18,7 @@ Algorithm:
     2. if opnd1 get assigned some value, set it's entry to "not live" and "no next use".
     3. In the sumbol table, set opnd2, opnd3 to "live" and the next uses of these to i 
 """
-def NextUseLive(bbNode, st):
+def NextUseLive(bbNode):
     """ Get the information for next and liveness
     Argemtents:
         bbNode list  --- A list of three address code instruction
@@ -50,29 +50,27 @@ def NextUseLive(bbNode, st):
         operands = tac.operands
         for operand in operands:
             if operand != None: 
-                attrs = st.getAttrs(operand)
-                if attrs["type"] == "variable":
+                if "const_" not in operand["type"]:
                     if not operand in nonTempVars:
                         nonTempVars.append(operand)
-
        
     # Now intialize out symbol table
     for i in range(countLines+1):             # for each line
         varsObject = {}
         for var in nonTempVars:             # for each variable
-            varsObject[var] = [0,-1]        # init the live and nextuse to 0 and -1
+            varsObject[var["place"]] = [0,-1]        # init the live and nextuse to 0 and -1
         symbolTable.append(varsObject)
 
     # For exist line, make all live as all are global
     for var in nonTempVars:
-        symbolTable[countLines][var][0] = 1
+        symbolTable[countLines][var["place"]][0] = 1
 
     # scan backword the basic block and apply the changes in symbol table
     currLine = countLines - 1
     while currLine >= 0:
         # copy the info of next line in symbol table into the current line in symbol table
         for var in nonTempVars:
-            symbolTable[currLine][var] = symbolTable[currLine+1][var]
+            symbolTable[currLine][var["place"]] = symbolTable[currLine+1][var["place"]]
 
 
         tac = bbNode[currLine]
@@ -81,9 +79,8 @@ def NextUseLive(bbNode, st):
         activeVars = []
         for operand in operands:
             if operand != None:
-                attrs = st.getAttrs(operand)
-                if attrs["type"] == "variable":
-                    activeVars.append(operand)  
+                if "const_" not in operand["type"]:
+                    activeVars.append(operand["place"])  
 
         # update the entries for variables if necessary   
         if tac.type == InstrType.copy or tac.type == InstrType.assgn:
@@ -100,8 +97,8 @@ def NextUseLive(bbNode, st):
             funcCallAt = currLine + 1
             while tac.type == InstrType.params:
                 attrs = st.getAttrs(tac.src)
-                if attrs["type"] == "variable":
-                    symbolTable[currLine][tac.src] = [1,funcCallAt+1]
+                if "const_" not in tac.src["type"]:
+                    symbolTable[currLine][tac.src["place"]] = [1,funcCallAt+1]
                 currLine -= 1 
                 tac = bbNode[currLine]
             continue

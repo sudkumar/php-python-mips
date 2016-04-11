@@ -642,11 +642,12 @@ def p_expr_assign(p):
     # SYMBOL TABLE STUFF
     # lookup for the variable into symbol table
     global stm
+
     name = p[1]["place"]
     attrs = stm.lookup(name)
     symType = attrs["type"]
     offset = attrs["offset"]
-
+    
     if(len(p)==4):
         if not p[3]["type"]:
             print "Variable "+ p[3]["place"]+" used before assignment."
@@ -654,10 +655,14 @@ def p_expr_assign(p):
             print "type casting error for "+ str(name) + " and " + p[3]["place"]
         else:
             # update the type and offset for the variable
+            symType = p[3]["type"]
+            offset = p[3]["offset"]
             stm.setAttr(name, "place", name)
-            stm.setAttr(name, "type", p[3]["type"])
-            stm.setAttr(name, "offset", p[3]["offset"])
-
+            stm.setAttr(name, "type", symType)
+            stm.setAttr(name, "offset", offset)
+            p[1]["type"] = symType
+            p[1]["offset"] = offset
+            
         global ir
         ir.emitCopy(p[1], p[3])
     else:
@@ -870,13 +875,22 @@ def p_exp_scalar(p):
           | TRUE
           | FALSE'''
     global ir
-    p[0] = p[1]
+    global stm
+    tmp = ir.newTemp()
+    p[0] = {}
+    p[0]["type"] = p[1]["type"]
+    p[0]["offset"] = p[1]["offset"]
+    p[0]["place"] = tmp
+
+    p[1]["type"] = "const_"+p[1]["type"]
+    ir.emitCopy(p[0], p[1])
     if(p[1]["place"].upper() == "TRUE"):
         p[0]["truelist"] = ir.makeList(ir.nextquad)
         ir.emitUjump()
     elif(p[1]["place"].upper() == "FALSE"):
         p[0]["falselist"] = ir.makeList(ir.nextquad)
         ir.emitUjump()
+
 
 def p_expr_ternary_op(p):
     'expr : expr COND_OP jump_marker  expr goto_marker  jump_marker COLON expr'

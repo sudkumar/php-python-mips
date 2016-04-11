@@ -61,7 +61,6 @@ class FlowGraph():
                 node = Node(tac[leaders[i]:(leaders[i+1])])   # still a leader is remaining
             else:       
                 node = Node(tac[leaders[i]:])          # this is the last leader
-
             self._blockNodes.append(node)
 
         self._blockNodes.append(Node("exit"))

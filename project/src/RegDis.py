@@ -9,7 +9,7 @@ class RegDis():
         self._rs = {} 
         
         # add the intial registers to table
-        for reg in (AvalRegs+ArgRegs+RetRegs):
+        for reg in (AvalRegs):
             self._rs[reg] = []
 
     @property
