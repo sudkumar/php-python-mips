@@ -1,4 +1,4 @@
-
+lineno = 1
 import sys
 import ply.lex as lex
 from tabulate import tabulate
@@ -172,9 +172,10 @@ lexer = lex.lex();
 
 inputStr = open(sys.argv[1], "r")
 data= ""
+
 for line in inputStr:
   data += (line)
-
+  lexer.lineno-=1
 # input data to lexer
 lexer.input(data)
 symbols = {}
