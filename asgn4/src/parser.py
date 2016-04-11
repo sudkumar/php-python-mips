@@ -38,12 +38,12 @@ precedence = (
 
 def p_start(p):
     'start : start_marker stmt_list'
-    p[0] = {"start":[p[2]]}
-    global stm
     stm.pop()
     # print stm.root.symbols
     global ir
-    ir.printTac()
+    p[0] = {}
+    p[0]["ir"] = ir
+    p[0]["stm"] = stm
 
 
 def p_start_marker(p):
@@ -654,6 +654,7 @@ def p_expr_assign(p):
             print "type casting error for "+ str(name) + " and " + p[3]["place"]
         else:
             # update the type and offset for the variable
+            stm.setAttr(name, "place", name)
             stm.setAttr(name, "type", p[3]["type"])
             stm.setAttr(name, "offset", p[3]["offset"])
 
@@ -909,18 +910,25 @@ def p_expr_ternary_op(p):
     p[0]["type"] = p[4]["type"]
     p[0]["offset"] = p[4]["offset"]
     stm.insert(p[0]["place"], p[0]["type"], p[0]["offset"])
-
+# setAttr fun in stm
 def p_expr_pre_incdec(p):
     '''expr : INC variable
           | DEC variable'''
     global ir
     ir.emitAssgn(p[1][0], p[2], p[2], {"place":"1", "type": "int", "offset": 4})
+    stm.setAttr(p[2]["place"], "type", "int")
     p[0] = p[2]
 
 def p_expr_post_incdec(p):
     '''expr : variable INC
           | variable DEC'''
-    p[0] = p[1]
+    global ir 
+    name = ir.newTemp()
+    p[0] = {"place" : name , "type": "int" , "offset" : 4}
+
+    ir.emitCopy(p[0],p[1])
+    ir.emitAssgn(p[2][0], p[1], p[1], {"place":"1", "type": "int", "offset": 4})
+    stm.setAttr(p[1]["place"], "type", "int")
 
 def p_expr_empty(p):
     'expr : EMPTY LPAREN expr RPAREN'
@@ -983,8 +991,8 @@ def p_empty(p):
     'empty : '
     p[0] = ''
 def p_error(t):
-    if t:
-        raise SyntaxError('invalid syntax', (None, t.lineno, None, t))
+    if t:        
+        raise SyntaxError('invalid syntax', (None, t.lineno, None, t.type))
     else:
         raise SyntaxError('unexpected EOF while parsing', (None, None, None, None))
 
@@ -1001,6 +1009,8 @@ def runIR():
 
     result = parser.parse(data,debug=0)
     # result = parser.parse(data,debug=log)
-    # print result
+    return result
+
 if __name__ == '__main__':
-    runIR()
+    result = runIR()
+    result["ir"].printTac()

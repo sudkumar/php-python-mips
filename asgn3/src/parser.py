@@ -669,7 +669,7 @@ def p_empty(p):
     p[0] = ''
 def p_error(p):
     if p:
-        raise SyntaxError('invalid syntax', (None, p.lineno, None, p))
+        raise SyntaxError('invalid syntax', (None, p.lineno, None, p.type))
     else:
         raise SyntaxError('unexpected EOF while parsing', (None, None, None, None))
 
