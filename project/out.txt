@@ -1,5 +1,5 @@
-['NameError: at line number 47, variable $d used before assignment.']
-['Warning: at line number 46, type casting for variable $a']
+['TypeError: at line number 25, expected boolean, int given.']
+[]
 t1 = 10
 t2 = 20
 t3 = t1 + t2
@@ -15,3 +15,233 @@ $b = t8
 t9 = 1
 t10 = $a + t9
 $a = t10
+t11 = 1
+t12 = $b + t11
+$a = t12
+t13 = 25
+if $a > t13 goto 21
+goto 24
+t14 = 10
+t15 = $a - t14
+goto 27
+t16 = 5
+t17 = $b + t16
+goto 29
+t18 = t15
+goto 30
+t18 = t17
+$c = t18
+t19 = 0
+if $c == t19 goto 34
+goto 37
+t20 = 1
+$c = t20
+goto 42
+t21 = 2
+if $c == t21 goto 40
+goto 42
+t22 = 0
+$c = t22
+t23 = 0
+t24 = $c + t23
+$c = $c + 1
+$c = $c + 1
+goto 42
+t25 = 1
+$d = t25
+t26 = 1
+t27 = $d + t26
+$e = t27
+t28 = $d * $e
+$f = t28
+goto 60
+t29 = 1
+$c = t29
+t30 = 10
+$d = t30
+ret $c
+goto 64
+t31 = 1
+$c = t31
+ret $c
+call 55 0 t32
+call 61 0 t33
+$d = t33
+t34 = 1
+$c = t34
+	.text
+	.globl main
+
+main:
+
+B0:
+	li $t0, 10
+	li $t1, 20
+	add $t3, $t0, $t1
+	li $t2, 12342340
+	sw $t1, t2
+	add $t1, $t3, $t2
+	sw $t2, t4
+	li $t2, 112
+	sw $t0, t1
+	li $t0, 1
+	sw $t3, t3
+	sw $t3, $c
+	add $t3, $t2, $t0
+	sw $t1, t5
+	li $t1, 1
+	sw $t0, t7
+	add $t0, $t2, $t1
+	sw $t2, t6
+	li $t2, 1
+	sw $t1, t9
+	add $t1, $t3, $t2
+	sw $t2, t11
+	li $t2, 25
+	sw $t3, $b
+	sw $t1, $a
+	sw $t3, t8
+	sw $t0, t10
+	sw $t1, t12
+	sw $t2, t13
+	bgt $t1, $t2, B2
+B1:
+	j B3
+B2:
+	li $t3, 10
+	lw $t1, $a
+	sub $t2, $t1, $t3
+	sw $t3, t14
+	sw $t2, t15
+	j B4
+B3:
+	li $t0, 5
+	lw $t3, $b
+	add $t2, $t3, $t0
+	sw $t0, t16
+	sw $t2, t17
+	j B5
+B4:
+	lw $t1, t15
+	sw $t1, t18
+	j B6
+B5:
+	lw $t0, t17
+	sw $t0, t18
+B6:
+	lw $t2, t18
+	li $t3, 0
+	sw $t2, $c
+	sw $t3, t19
+	beq $t2, $t3, B8
+B7:
+	j B9
+B8:
+	li $t1, 1
+	sw $t1, t20
+	sw $t1, $c
+	j B12
+B9:
+	li $t0, 2
+	lw $t2, $c
+	sw $t0, t21
+	beq $t2, $t0, B11
+B10:
+	j B12
+B11:
+	li $t3, 0
+	sw $t3, t22
+	sw $t3, $c
+B12:
+	li $t1, 0
+	lw $t0, $c
+	add $t3, $t0, $t1
+	lw $t2, 1
+	add $t0, $t0, $t2
+	add $t0, $t0, $t2
+	sw $t1, t23
+	sw $t3, t24
+	sw $t0, $c
+	j B12
+B13:
+	li $t1, 1
+	li $t3, 1
+	add $t2, $t1, $t3
+	mul $t0, $t1, $t2
+	sw $t1, t25
+	sw $t1, $d
+	sw $t3, t26
+	sw $t2, t27
+	sw $t2, $e
+	sw $t0, t28
+	sw $t0, $f
+	j B15
+B14:
+	addi $sp, -8
+	sw $ra, 0($sp)
+	sw $fp, 4($sp)
+	move $fp, $sp
+	addi $sp, -8
+	li $t1, 1
+	li $t3, 10
+	sw $t1, t29
+	sw $t1, $c
+	sw $t3, t30
+	sw $t3, $d
+	move $v0, $t1
+	move $sp, $fp
+	lw $ra, 0($sp)
+	lw $fp, 4($sp)
+	addi $sp, $sp, 8
+	jr $ra
+B15:
+	j B17
+B16:
+	addi $sp, -8
+	sw $ra, 0($sp)
+	sw $fp, 4($sp)
+	move $fp, $sp
+	addi $sp, -4
+	li $t2, 1
+	sw $t2, t31
+	sw $t2, $c
+	move $v0, $t2
+	move $sp, $fp
+	lw $ra, 0($sp)
+	lw $fp, 4($sp)
+	addi $sp, $sp, 8
+	jr $ra
+B17:
+	jal B14
+	move $t0, $v0
+	sw $t0, t32
+B18:
+	jal B16
+	move $t1, $v0
+	sw $t1, t33
+B19:
+	lw $t3, t33
+	li $t2, 1
+	sw $t3, $d
+	sw $t2, t34
+	sw $t2, $c
+	j _exit_
+
+	.data
+$e:	.word	0
+t8:	.word	0
+t28:	.word	0
+$f:	.word	0
+$d:	.word	0
+t5:	.word	0
+$b:	.word	0
+$c:	.word	0
+$a:	.word	0
+t3:	.word	0
+t15:	.word	0
+t17:	.word	0
+t10:	.word	0
+t12:	.word	0
+t18:	.word	0
+t24:	.word	0
+t27:	.word	0
