@@ -26,7 +26,7 @@ if __name__ == '__main__':
     codeBlocks = code._codeBlocks
     # add the library functions
     # Now add the generated block by code generator
-    i = 1
+    i = 0
     for node in codeBlocks:   
         print "B"+str(i)+":"
         print "\t"+"\n\t".join(node)

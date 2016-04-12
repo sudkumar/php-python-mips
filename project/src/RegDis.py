@@ -56,3 +56,7 @@ class RegDis():
     # set the var as the only thing in a register
     def setVar(self, reg, var):
         self._rs[reg] = [var]
+
+    # remove a var from a register
+    def removeVar(self, reg, var):
+        self._rs[reg].remove(var)

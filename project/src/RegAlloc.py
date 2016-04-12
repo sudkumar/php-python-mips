@@ -59,9 +59,8 @@ class RegAlloc():
 
         # get the current rs and make sure that we don't give the current var, one of these registers        
         rs = []
-        for x in notRs:
+        for x in notRs.keys():
             rs.append(notRs[x])
-
         scores = {}
         for reg in self._regDis.registers:
             if reg in rs:

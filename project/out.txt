@@ -2,3 +2,145 @@ t1 = 10
 t2 = 20
 t3 = t1 + t2
 $c = t3
+t4 = 12342340
+t5 = $c + t4
+$b = t5
+t6 = 112
+$a = t6
+t7 = 1
+t8 = $a + t7
+$b = t8
+t9 = 1
+t10 = $a + t9
+$a = t10
+t11 = 1
+t12 = $b + t11
+$a = t12
+t13 = 25
+if $a > t13 goto 21
+goto 24
+t14 = 10
+t15 = $a - t14
+goto 27
+t16 = 5
+t17 = $b + t16
+goto 29
+t18 = t15
+goto 30
+t18 = t17
+$c = t18
+if $c == $b goto 33
+goto 35
+t19 = 1
+$c = t19
+t20 = 0
+if $c > t20 goto 38
+goto 40
+$c = $c + 1
+goto 35
+t21 = 1
+$d = t21
+t22 = 1
+t23 = $d + t22
+$e = t23
+t24 = $d * $e
+$f = t24
+	.text
+	.globl main
+
+main:
+
+B0:
+	li $t0, 10
+	li $t1, 20
+	add $t2, $t0, $t1
+	li $t3, 12342340
+	sw $t1, t2
+	add $t1, $t2, $t3
+	sw $t3, t4
+	li $t3, 112
+	sw $t0, t1
+	li $t0, 1
+	sw $t2, t3
+	sw $t2, $c
+	add $t2, $t3, $t0
+	sw $t1, t5
+	li $t1, 1
+	sw $t0, t7
+	add $t0, $t3, $t1
+	sw $t3, t6
+	li $t3, 1
+	sw $t1, t9
+	add $t1, $t2, $t3
+	sw $t3, t11
+	li $t3, 25
+	sw $t2, $b
+	sw $t1, $a
+	sw $t2, t8
+	sw $t0, t10
+	sw $t1, t12
+	sw $t3, t13
+	bgt $t1, $t3, B2
+B1:
+	j B3
+B2:
+	li $t2, 10
+	lw $t1, $a
+	sub $t0, $t1, $t2
+	sw $t2, t14
+	sw $t0, t15
+	j B4
+B3:
+	li $t1, 5
+	lw $t3, $b
+	add $t2, $t3, $t1
+	sw $t1, t16
+	sw $t2, t17
+	j B5
+B4:
+	lw $t0, t15
+	sw $t0, t18
+	j B6
+B5:
+	lw $t1, t17
+	sw $t1, t18
+B6:
+	lw $t2, t18
+	lw $t3, $b
+	sw $t2, $c
+	beq $t2, $t3, B8
+B7:
+	j B9
+B8:
+	li $t0, 1
+	sw $t0, t19
+	sw $t0, $c
+B9:
+	li $t1, 0
+	lw $t1, $c
+	lw $t1, t20
+	sw $t1, t20
+	bgt $t1, $t1, B11
+B10:
+	j B12
+B11:
+	lw $t2, $c
+	lw $t2, 1
+	add $t2, $t2, $t2
+	sw $t2, $c
+	j B9
+B12:
+	li $t3, 1
+	li $t0, 1
+	add $t1, $t3, $t0
+	mul $t2, $t3, $t1
+	sw $t3, t21
+	sw $t3, $d
+	sw $t0, t22
+	sw $t1, t23
+	sw $t1, $e
+	sw $t2, t24
+	sw $t2, $f
+	j _exit_
+
+	.data
