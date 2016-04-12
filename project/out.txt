@@ -1,7 +1,5 @@
 Warning! type casting for variable $c at line number 10
 Warning! type mismatch for operator += with operands $d and $c at line number 11
-Warning! type casting for variable $c at line number 12
-{'truelist': [20], 'falselist': [21], 'type': 'bool', 'offset': 1} {'truelist': [23], 'falselist': [24], 'type': 'bool', 'offset': 1}
 t1 = 10
 t2 = 20
 t3 = t1 + t2
@@ -18,16 +16,8 @@ t9 = 1
 t10 = $a + t9
 $a = t10
 t11 = "f"
-$c = t11
 $d = $d + $c
 t12 = 4
 $c = t12
-if $a == $b goto 22
-goto 27
 t13 = 5
-if $a <= t13 goto 25
-goto 27
-t14 = 9
-$c = t14
-t15 = 5
-$d = t15
+$d = t13

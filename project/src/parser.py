@@ -652,19 +652,18 @@ def p_expr_assign(p):
             raise NameError("Variable "+ p[3]["place"]+" used before assignment at line number "+ str(p.lexer.lineno))
         if(symType and symType != p[3]["type"]):
             print "Warning! type casting for variable "+ str(name) + " at line number "+ str(p.lexer.lineno)
-            # p[1]["type"] = symType
-            # p[1]["offset"] = offset
 
-        # update the type and offset for the variable
-        symType = p[3]["type"]
-        offset = p[3]["offset"]
-        stm.setAttr(name, "place", name)
-        stm.setAttr(name, "type", symType)
-        stm.setAttr(name, "offset", offset)
-        p[1]["type"] = symType
-        p[1]["offset"] = offset
-        global ir
-        ir.emitCopy(p[1], p[3])
+        else:            
+            # update the type and offset for the variable
+            symType = p[3]["type"]
+            offset = p[3]["offset"]
+            stm.setAttr(name, "place", name)
+            stm.setAttr(name, "type", symType)
+            stm.setAttr(name, "offset", offset)
+            p[1]["type"] = symType
+            p[1]["offset"] = offset
+            global ir
+            ir.emitCopy(p[1], p[3])
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
 
@@ -818,15 +817,20 @@ def p_expr_binary_op(p):
 
     global ir
     p[0] = {}
+    print p[1] , p[4]
+    
     if p[2] == "||":
+  
         ir.backpatch(p[1]["falselist"], p[3]["quad"])
         p[0]["truelist"] = ir.mergeList(p[1]["truelist"], p[4]["truelist"])
         p[0]["falselist"] = p[4]["falselist"]
+
     else:
         ir.backpatch(p[1]["truelist"], p[3]["quad"])
         p[0]["truelist"] = p[4]["truelist"]
         p[0]["falselist"] = ir.mergeList(p[1]["falselist"], p[4]["falselist"])
 
+    print p[0]
 def p_expr_binary_relop(p):
     '''expr : expr IDENTICAL  expr
           | expr NOT_IDENTICAL  expr
