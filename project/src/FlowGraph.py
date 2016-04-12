@@ -43,7 +43,7 @@ class FlowGraph():
         # get the functions dictionary
         self._fns ={}
         for ln in bbs._fns:
-            self._fns[str(ln)] = bbs._leaders.index(ln)
+            self._fns[bbs._leaders.index(ln)] = ln
 
         # add the links between nodes
         self.addLinks(bbs._leaders)
@@ -94,6 +94,7 @@ class FlowGraph():
                     if i < countLeaders-1:
                         nodes[i].addSucc(nodes[i+1])
                     else:
+                        print leaders
                         # it is the last `leader`
                         nodes[i].addSucc(exitNode)
                 

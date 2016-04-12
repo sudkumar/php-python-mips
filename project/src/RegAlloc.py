@@ -46,6 +46,8 @@ class RegAlloc():
         if not allocatedR:
             print "Unable to get any register by spill for var at:" + ', '.join(map(str, operands["place"]))
 
+
+
         return allocatedR
 
 
@@ -59,9 +61,8 @@ class RegAlloc():
 
         # get the current rs and make sure that we don't give the current var, one of these registers        
         rs = []
-        for x in notRs:
+        for x in notRs.keys():
             rs.append(notRs[x])
-
         scores = {}
         for reg in self._regDis.registers:
             if reg in rs:
@@ -70,7 +71,7 @@ class RegAlloc():
             scores[reg] = 0
             for var in self._regDis.fetchVar(reg):
                 # if Addr_Des[v] contains other locations for it's value, then "OK". 
-                if len(self._addrDis.fetchR(var)) > 1:
+                if len(self._addrDis.fetchR(var)) > 1 and len(self._regDis.fetchVar(reg)) == 1:
                     return reg
 
                 # if `v` is `dest`, the value being computed by this instruction, and `dest` is not also one of the `other`
@@ -84,7 +85,6 @@ class RegAlloc():
                 # print var
                 # print nextUse
                 if nextUse[var["place"]][0] == 0 and nextUse[var["place"]][1] == -1 and self._regDis.isOnlyVar(reg, var):
-                    print nextUse
                     return reg
 
                 # if we are not "OK" by one of the first two cases, then we need to generate the store instruction `store v, R` to 
@@ -119,4 +119,5 @@ class RegAlloc():
     # Add to free list of register
     def addToFree(self, regs):
         for reg in regs:
-            self._freeRs.append(reg)
+            if not reg in self._freeRs:
+                self._freeRs.append(reg)

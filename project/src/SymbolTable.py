@@ -20,14 +20,23 @@ class SymbolTable():
         @params _type {string} -- type of name (an attribute)
         @params _offset {integer} -- size | offset for the name
     """
-    def insert(self, _name, _type, _offset):
+    def insert(self, _name, _type, _offset, _scope=None):
         # create a attribute's dictionary
         attrs = {}
         # attach the information about the _name in attrs
         attrs["place"] = _name
         attrs["type"] = _type
         attrs["offset"] = _offset
+        # now add the scope
+        if _scope != None:
+            attrs["scope"] = _scope
+        else:
+            if self.parent != None:
+                attrs["scope"] = "local"
+            else:
+                attrs["scope"] = "global"
 
+        self.addWidth(_offset)
         # attach the attributes for the name in the symbol table
         self.symbols[_name] = attrs
 
@@ -84,6 +93,10 @@ class SymbolTable():
             # create a attributes dictionary for symbol
             self.symbols[_symbol] = {}
             self.symbols[_symbol][_key] = _val
+        # check of we added the any offset
+        if _key == "offset":
+            self.addWidth(_val)
+
     """ Get attribute
         get attribute for a symbol in symbol table
         @params _symbol {string} -- symbol for which attribute should be fetched
