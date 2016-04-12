@@ -1,5 +1,5 @@
-Warning! type casting for variable $c at line number 10
-Warning! type mismatch for operator += with operands $d and $c at line number 11
+['NameError: at line number 47, variable $d used before assignment.']
+['Warning: at line number 46, type casting for variable $a']
 t1 = 10
 t2 = 20
 t3 = t1 + t2
@@ -14,10 +14,53 @@ t8 = $a + t7
 $b = t8
 t9 = 1
 t10 = $a + t9
-$a = t10 
-t11 = "f"
-$d = $d + $c
-t12 = 4
-$c = t12
-t13 = 5
-$d = t13
+$a = t10
+t11 = "d"
+$e = $d
+t12 = 1
+t13 = $b + t12
+$a = t13
+t14 = 25
+if $a > t14 goto 23
+goto 26
+t15 = 10
+t16 = $a - t15
+goto 29
+t17 = 5
+t18 = $b + t17
+goto 31
+t19 = t16
+goto 32
+t19 = t18
+$c = t19
+if $c == $b goto 35
+goto 37
+t20 = 1
+$c = t20
+t21 = 0
+if $c > t21 goto 40
+goto 42
+$c = $c + 1
+goto 37
+t22 = 1
+$d = t22
+t23 = 1
+t24 = $d + t23
+$e = t24
+t25 = $d * $e
+$f = t25
+goto 55
+t26 = 1
+$c = t26
+t27 = 10
+$d = t27
+ret $c
+goto 59
+t28 = 1
+$c = t28
+ret $c
+call 50 0 t29
+call 56 0 t30
+$d = t30
+t31 = 1
+$c = t31

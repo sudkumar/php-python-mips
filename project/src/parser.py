@@ -36,6 +36,9 @@ precedence = (
   ('right', 'STATIC', 'ABSTRACT', 'FINAL', 'PRIVATE', 'PROTECTED', 'PUBLIC'),
   )
 
+warnings = []
+errors = []
+
 def p_start(p):
     'start : start_marker stmt_list'
     global stm
@@ -576,7 +579,7 @@ def p_func_call(p):
     name = p[1]
     attrs = stm.lookup(name)
     if(not attrs):
-        print 'undefined function ' + name + '!'
+        errors.append("NameError: at line number "+ str(p.lexer.lineno)+", function "+name +" is not defined.")
     else:
         tmp = ir.newTemp()
         p[0] = {"place" : tmp , "type": "int" , "offset" : 4}
@@ -646,20 +649,13 @@ def p_expr_assign(p):
     name = p[1]["place"]
     attrs = stm.lookup(name)
     symType = attrs["type"]
-    offset = attrs["offset"]
-    
+    offset = attrs["offset"] 
     if(len(p)==4):
-        if not p[3]["type"]:
-            print "Variable "+ p[3]["place"]+" used before assignment."
+        if not p[3]["type"]:            
+            errors.append("NameError: at line number "+ str(p.lexer.lineno)+", variable "+ p[3]["place"]+" used before assignment.")
         if(symType and symType != p[3]["type"]):
-<<<<<<< HEAD
-            print "Warning! type casting for variable "+ str(name) + " at line number "+ str(p.lexer.lineno)
-
-        else:            
-=======
-            print "type casting error for "+ str(name) + " and " + p[3]["place"]
-        else:
->>>>>>> b88550b2452d65fbaf276b145b74aa7fd609ef17
+            warnings.append("Warning: at line number "+ str(p.lexer.lineno)+", type casting for variable "+ str(name))
+        else:    
             # update the type and offset for the variable
             symType = p[3]["type"]
             offset = p[3]["offset"]
@@ -668,14 +664,8 @@ def p_expr_assign(p):
             stm.setAttr(name, "offset", offset)
             p[1]["type"] = symType
             p[1]["offset"] = offset
-<<<<<<< HEAD
             global ir
             ir.emitCopy(p[1], p[3])
-=======
-            
-        global ir
-        ir.emitCopy(p[1], p[3])
->>>>>>> b88550b2452d65fbaf276b145b74aa7fd609ef17
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
 
@@ -793,7 +783,8 @@ def p_expr_assign_op(p):
           | variable MOD_EQ expr'''
     global ir
     if p[1]["type"] != p[3]["type"]:
-        print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
+        warnings.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
+
     ir.emitAssgn(p[2][0], p[1], p[1], p[3])
     p[0] = p[1]
 
@@ -813,7 +804,8 @@ def p_expr_arith(p):
     global ir
     name = ir.newTemp()
     if p[1]["type"] != p[3]["type"]:
-        print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
+        warnings.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
+
     symType = p[1]["type"]
     offset = p[1]["offset"]
     global stm
@@ -829,20 +821,17 @@ def p_expr_binary_op(p):
 
     global ir
     p[0] = {}
-    print p[1] , p[4]
-    
+    if(p[1]["type"]!="bool" or p[4]["type"]!="bool"):
+       errors.append("TypeError: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] )
     if p[2] == "||":
-  
         ir.backpatch(p[1]["falselist"], p[3]["quad"])
         p[0]["truelist"] = ir.mergeList(p[1]["truelist"], p[4]["truelist"])
         p[0]["falselist"] = p[4]["falselist"]
-
     else:
         ir.backpatch(p[1]["truelist"], p[3]["quad"])
         p[0]["truelist"] = p[4]["truelist"]
         p[0]["falselist"] = ir.mergeList(p[1]["falselist"], p[4]["falselist"])
-
-    print p[0]
+ 
 def p_expr_binary_relop(p):
     '''expr : expr IDENTICAL  expr
           | expr NOT_IDENTICAL  expr
@@ -854,12 +843,11 @@ def p_expr_binary_relop(p):
           | expr GREATER_EQ  expr
           | expr INSTANCEOF  expr'''
     global ir
-    p[0] = {}
+    p[0] = {"type" : "bool" , "offset":1}
     p[0]["truelist"] = ir.makeList(ir.nextquad)
-    p[0]["falselist"] = ir.makeList(ir.nextquad+1)
+    p[0]["falselist"] = ir.makeList(ir.nextquad+1) 
     ir.emitCjump(p[2], p[1], p[3])
     ir.emitUjump()
-
 def p_expr_unary_op(p):
     '''expr : PLUS expr
           | MINUS expr
@@ -945,14 +933,27 @@ def p_expr_ternary_op(p):
 def p_expr_pre_incdec(p):
     '''expr : INC variable
           | DEC variable'''
-    global ir
+    global ir 
+    if(p[2]["type"]==None):         
+        errors.append("NameError: at line number "+ str(p.lexer.lineno)+",variable "+p[2]["place"] +" is not defined.")
+
     ir.emitAssgn(p[1][0], p[2], p[2], {"place":"1", "type": "int", "offset": 4})
+    stm.setAttr(p[2]["place"], "type", "int")
     p[0] = p[2]
 
 def p_expr_post_incdec(p):
     '''expr : variable INC
           | variable DEC'''
-    p[0] = p[1]
+    global ir 
+    if(p[1]["type"]==None):
+        errors.append("NameError: at line number "+ str(p.lexer.lineno)+",variable "+p[1]["place"] +" is not defined.")
+
+    name = ir.newTemp()
+    p[0] = {"place" : name , "type": "int" , "offset" : 4}
+
+    ir.emitCopy(p[0],p[1])
+    ir.emitAssgn(p[2][0], p[1], p[1], {"place":"1", "type": "int", "offset": 4})
+    stm.setAttr(p[1]["place"], "type", "int")
 
 def p_expr_empty(p):
     'expr : EMPTY LPAREN expr RPAREN'
@@ -1032,6 +1033,8 @@ def runIR():
 
 
     result = parser.parse(data,debug=0)
+    # print errors
+    # print warnings
     # result = parser.parse(data,debug=log)
     return result
 
