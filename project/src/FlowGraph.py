@@ -43,7 +43,7 @@ class FlowGraph():
         # get the functions dictionary
         self._fns ={}
         for ln in bbs._fns:
-            self._fns[str(ln)] = bbs._leaders.index(ln)
+            self._fns[bbs._leaders.index(ln)] = ln
 
         # add the links between nodes
         self.addLinks(bbs._leaders)

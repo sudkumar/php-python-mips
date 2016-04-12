@@ -71,7 +71,7 @@ class RegAlloc():
             scores[reg] = 0
             for var in self._regDis.fetchVar(reg):
                 # if Addr_Des[v] contains other locations for it's value, then "OK". 
-                if len(self._addrDis.fetchR(var)) > 1:
+                if len(self._addrDis.fetchR(var)) > 1 and len(self._regDis.fetchVar(reg)) == 1:
                     return reg
 
                 # if `v` is `dest`, the value being computed by this instruction, and `dest` is not also one of the `other`
@@ -119,4 +119,5 @@ class RegAlloc():
     # Add to free list of register
     def addToFree(self, regs):
         for reg in regs:
-            self._freeRs.append(reg)
+            if not reg in self._freeRs:
+                self._freeRs.append(reg)

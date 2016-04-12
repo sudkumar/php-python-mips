@@ -32,8 +32,6 @@ class CodeGen():
 
 
         self._fns = flowGraph._fns
-        # print self._fns
-        # print self._st.ftable
 
         self._codeBlocks = []
 
@@ -44,7 +42,9 @@ class CodeGen():
         self._toFreeRs = []  
 
         # For each node in blockNode of flow graph as node:
+        nodeNumber = -1
         for node in blockNodes:
+
              # Create the Register and Address Descriptor for all available register and variables.
             # The Address Descriptor table, contains information about all the non local variables's value location
             self._addrDis = AddrDis()      
@@ -76,6 +76,13 @@ class CodeGen():
             self._newBlockIns = []
             jumpIns = []
             countBlock = len(blockIns)
+            nodeNumber+= 1
+            if nodeNumber in self._fns.keys():
+                self._newBlockIns.append("addi $sp, -8")
+                self._newBlockIns.append("sw $ra, 0($sp)")
+                self._newBlockIns.append("sw $fp, 4($sp)")
+                self._newBlockIns.append("move $fp, $sp")
+                self._newBlockIns.append("addi $sp, -"+ str(self._st.ftable[self._fns[nodeNumber]]["st"].width))
             while i < countBlock:
                 tac = blockIns[i]
                 self._toFreeRs = []
@@ -298,13 +305,6 @@ class CodeGen():
             self.genLiInstr(rDest, src)
 
         if not srcInt:
-            # remove dest from all regs that contains it till now
-            for location in self._addrDis.fetchR(dest):
-                # check if the location is a register
-                if self._regDis.isIn(location):
-                    # now remove the dest from the regdis of location
-                    self._regDis.removeVar(location, dest)
-
             # Adjust the Reg_Des[R_src] to include `dest`.
             self._regDis.appendVar(rSrc, dest)
 
@@ -312,8 +312,16 @@ class CodeGen():
             # add the dest at the a location in Reg_Des[R-Dest]
             self._regDis.setVar(rDest, dest)
 
+         # remove dest from all regs that contains it till now
+        for location in self._addrDis.fetchR(dest):
+            # check if the location is a register
+            if self._regDis.isIn(location):
+                # now remove the dest from the regdis of location
+                self._regDis.removeVar(location, dest)
+
         # Change the Addr_Des[dest] so that it holds only location `R_dest`.
         self._addrDis.setR(dest, rDest)
+
 
 
     # Handle the function call
@@ -363,9 +371,8 @@ class CodeGen():
         jumpIns = []
         # get the value to return
         src = tac.src
-        attrs = self._st.getAttrs(src)
-        if attrs["type"] == "const_int":
-            jumpIns.append("li $v0, "+str(attrs["val"]))
+        if "const_" in src["type"]:
+            jumpIns.append("li $v0, "+src["place"])
         else:     
             allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
             self._regAlloc.removeFromFree(allocatedR)     # remove from free list
@@ -378,8 +385,10 @@ class CodeGen():
             jumpIns.append("move $v0, "+allocatedR)
 
         # add the load for return value
+        jumpIns.append("move $sp, $fp")
         jumpIns.append("lw $ra, 0($sp)")
-        jumpIns.append("addi $sp, $sp, 4")
+        jumpIns.append("lw $fp, 4($sp)")
+        jumpIns.append("addi $sp, $sp, 8")
         jumpIns.append("jr $ra")        
 
         return jumpIns

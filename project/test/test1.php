@@ -18,12 +18,17 @@
     $d = 1;
     $e = $d + 1;
     $f = $d * $e;
-    // function sum($a,$b){
-    //     $c = $a + 1;
-    //     return $a;
-    //     $c = $a + $b;
-    //     return $c;
-    // }
-    // $c = sum($a,$b);
+    function sum(){
+        $c = 1;
+        $d = 10;
+        return $c;
+    }
+    function foo(){
+        $c = 1;
+        return $c;
+    }
+    sum();
+    $d = foo();
     // echo $c;
+    $c = 1;
  ?>
