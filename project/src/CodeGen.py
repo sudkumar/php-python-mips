@@ -27,21 +27,12 @@ class CodeGen():
         blockNodes = flowGraph._blockNodes
         countNodes = len(blockNodes)
 
-        # Create the Register and Address Descriptor for all available register and variables.
-        # The Address Descriptor table, contains information about all the non local variables's value location
-        self._addrDis = AddrDis()      
-        # The Register Descriptor table, contains information about allocation of all the registers
-        self._regDis = RegDis()
-
-        # self._tr = Translator()
 
         self._st = stm
 
-        self._regAlloc = RegAlloc(self._st, self._regDis, self._addrDis)
 
-        # a set of empty registers
-        self._freeRs = AvalRegs
-        
+        self._fns = flowGraph._fns
+
         self._codeBlocks = []
 
         self._globalVars = {}
@@ -51,7 +42,21 @@ class CodeGen():
         self._toFreeRs = []  
 
         # For each node in blockNode of flow graph as node:
+        nodeNumber = -1
         for node in blockNodes:
+
+             # Create the Register and Address Descriptor for all available register and variables.
+            # The Address Descriptor table, contains information about all the non local variables's value location
+            self._addrDis = AddrDis()      
+            # The Register Descriptor table, contains information about allocation of all the registers
+            self._regDis = RegDis()
+            # self._tr = Translator()
+            # a set of empty registers
+            self._freeRs = AvalRegs
+            
+
+            self._regAlloc = RegAlloc(self._st, self._regDis, self._addrDis)
+
             blockIns = node._block
             if blockIns == "entry" or blockIns == "exit":
                 # entry and exit nodes, continue
@@ -71,6 +76,13 @@ class CodeGen():
             self._newBlockIns = []
             jumpIns = []
             countBlock = len(blockIns)
+            nodeNumber+= 1
+            if nodeNumber in self._fns.keys():
+                self._newBlockIns.append("addi $sp, -8")
+                self._newBlockIns.append("sw $ra, 0($sp)")
+                self._newBlockIns.append("sw $fp, 4($sp)")
+                self._newBlockIns.append("move $fp, $sp")
+                self._newBlockIns.append("addi $sp, -"+ str(self._st.ftable[self._fns[nodeNumber]]["st"].width))
             while i < countBlock:
                 tac = blockIns[i]
                 self._toFreeRs = []
@@ -192,7 +204,7 @@ class CodeGen():
                 if src in allocatedRs.keys():
                     continue
                 if tac.operator == "+" and (not bothInt):
-                    allocatedRs[src] = str(intVal)
+                    allocatedRs[src["place"]] = str(intVal)
                 else:
                     rSrc = self._regAlloc.getReg(src, tac, nextUse, allocatedRs)
                     allocatedRs[src["place"]] = rSrc
@@ -210,7 +222,7 @@ class CodeGen():
         found = False
         reg = self._regDis.onlyVarReg(dest)
         if reg != None:
-            allocatedRs[dest["place"]] = reg
+            rDest = reg
             self._regAlloc.removeFromFree(reg)      # remove the register from free list
             found = True
         if not found:
@@ -226,7 +238,7 @@ class CodeGen():
                             # a register location
                             # Now check if R_src holds only src. if so, return it
                             if self._regDis.isOnlyVar(location, src):
-                                allocatedRs[dest["place"]] = location
+                                rDest = location
                                 self._regAlloc.removeFromFree(location)     # remove the location (register) from free list
                                 found = True
                                 break
@@ -236,9 +248,8 @@ class CodeGen():
 
             # if still not found, get from regs
             if not found:
-                rDest = self._regAlloc.getReg(dest, tac, nextUse, allocatedRs)
+                rDest = self._regAlloc.spill(tac, nextUse, allocatedRs)
                 self.storeSpilled(rDest)
-                allocatedRs[dest["place"]] = rDest
                 self._regAlloc.removeFromFree(rDest)        # remove from free registers
 
         # create instruction for addi if operator is "+" and srcs are int
@@ -260,9 +271,7 @@ class CodeGen():
             else:
                 self._newBlockIns.append("addi " +  ', '.join(regs))    
         else:
-            self._newBlockIns.append(OperatorMap[tac.operator]+ " " + ', '.join(map(lambda x: str(allocatedRs[x["place"]]), operands)))
-
-        rDest = allocatedRs[dest["place"]]
+            self._newBlockIns.append(OperatorMap[tac.operator]+ " " + rDest +", " +  ', '.join(map(lambda x: str(allocatedRs[x["place"]]), srcs)))
 
         # update the resigster and address discriptor of destination
         self.updateRegAddrOfDest(dest, rDest)
@@ -282,7 +291,6 @@ class CodeGen():
             # set R_dest = R_src
             rDest = rSrc
             self._regAlloc.removeFromFree(rDest)    # now remove from free registers
-
             # If src=Ins.srcOperand is not in 'Register':
             # get it from memory and store in the register
             self.lwInR(src, rSrc)
@@ -292,18 +300,29 @@ class CodeGen():
             rSrc = src["place"]
             rDest = self._regAlloc.getReg(dest, tac, nextUse, {})
             self.storeSpilled(rDest)
+            self._regAlloc.removeFromFree(rDest)
             # Now generate the li instruction
             self.genLiInstr(rDest, src)
 
         if not srcInt:
             # Adjust the Reg_Des[R_src] to include `dest`.
             self._regDis.appendVar(rSrc, dest)
+
         else:
             # add the dest at the a location in Reg_Des[R-Dest]
-            self._regDis.appendVar(rDest, dest)
+            self._regDis.setVar(rDest, dest)
+
+         # remove dest from all regs that contains it till now
+        for location in self._addrDis.fetchR(dest):
+            # check if the location is a register
+            if self._regDis.isIn(location):
+                # now remove the dest from the regdis of location
+                self._regDis.removeVar(location, dest)
 
         # Change the Addr_Des[dest] so that it holds only location `R_dest`.
         self._addrDis.setR(dest, rDest)
+
+
 
     # Handle the function call
     def handleFnsCalls(self, tac, nextUse):
@@ -352,9 +371,8 @@ class CodeGen():
         jumpIns = []
         # get the value to return
         src = tac.src
-        attrs = self._st.getAttrs(src)
-        if attrs["type"] == "const_int":
-            jumpIns.append("li $v0, "+str(attrs["val"]))
+        if "const_" in src["type"]:
+            jumpIns.append("li $v0, "+src["place"])
         else:     
             allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
             self._regAlloc.removeFromFree(allocatedR)     # remove from free list
@@ -367,8 +385,10 @@ class CodeGen():
             jumpIns.append("move $v0, "+allocatedR)
 
         # add the load for return value
+        jumpIns.append("move $sp, $fp")
         jumpIns.append("lw $ra, 0($sp)")
-        jumpIns.append("addi $sp, $sp, 4")
+        jumpIns.append("lw $fp, 4($sp)")
+        jumpIns.append("addi $sp, $sp, 8")
         jumpIns.append("jr $ra")        
 
         return jumpIns
@@ -380,12 +400,15 @@ class CodeGen():
         srcs = tac.srcs
         # get registers for all variabels
         allocatedRs = {}
+        # self._newBlockIns.append(str(self._regDis.registers))
+        # self._newBlockIns.append(str(self._addrDis.addrs))
         for src in srcs:
             rSrc = self._regAlloc.getReg(src, tac, nextUse, allocatedRs)
-            allocatedRs[src] = rSrc
+            # self._newBlockIns.append(str(allocatedRs))
+            allocatedRs[src["place"]] = rSrc
             self._regAlloc.removeFromFree(rSrc)     # remove from free list
-            attrs = self._st.getAttrs(src)
-            if attrs["type"] == "const_int":
+            self.storeSpilled(rSrc)
+            if "const_" in src["type"]:
                 # generate a li instruction
                 self.genLiInstr(rSrc, src)
             else:
@@ -393,7 +416,7 @@ class CodeGen():
                 # get it from memory and store in the register
                 self.lwInR(src, rSrc)
             
-        newExp = [allocatedRs[srcs[0]], allocatedRs[srcs[1]]]
+        newExp = [allocatedRs[srcs[0]["place"]], allocatedRs[srcs[1]["place"]]]
         genereatedIns.append(OperatorMap[tac.operator]+" "+", ".join(newExp)+", "+str(tac.target))
 
         return genereatedIns
@@ -423,10 +446,10 @@ class CodeGen():
                     self._toFreeRs.append(rX)
 
                 else:
-                    print "code:427::"
-                    print self._regDis.registers
-                    print self._addrDis.addrs
-                    print "Unable to restore value of: "+str(x)
+                    self._newBlockIns.append("code:427::")
+                    self._newBlockIns.append(str(self._regDis.registers))
+                    self._newBlockIns.append(str(self._addrDis.addrs))
+                    self._newBlockIns.append("Unable to restore value of: "+str(x))
 
             else:
                 # remove other location and if there is a register 
@@ -446,7 +469,11 @@ class CodeGen():
                 # self._newBlockIns.append(Translator.store(var, allocatedR))
                 self._newBlockIns.append("sw "+str(allocatedR)+", "+str(var["place"]))
                 # update the address discriptor for these variables, add there own location
-                self._addrDis.appendR(var, var["place"])
+                self._addrDis.setR(var, var["place"])
+            toRemoveVars = self._regDis.fetchVar(allocatedR)
+            for var in toRemoveVars:
+                # remove the var from register discriptor of allocatedR
+                self._regDis.removeVar(allocatedR, var)
 
 
     # Generate instruction for tmp assigned register to integers
@@ -469,7 +496,7 @@ class CodeGen():
 
             # Change the Addr_Des[src] by adding `R_src` as an additional location.
             self._addrDis.appendR(src, rSrc)
-
+ 
     # Update the destination's register and address discriptors after assignment
     def updateRegAddrOfDest(self, dest, rDest):
         # Change the Reg_Des[R_dest] so that it holds only `dest`.
@@ -481,6 +508,10 @@ class CodeGen():
 
         # Remove `R_dest` from the Address Descriptor of any variable other than `dest`. 
         self._addrDis.removeR(rDest, dest)
+
+        # Remove the dest from resiters other than rDest if there is anyone who contains the value 
+        # of dest
+        self._regDis.removeVarOtherThen(dest, rDest)
 
 if __name__ == '__main__':
     fileName = "./../test/test1.ir"

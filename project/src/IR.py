@@ -56,8 +56,12 @@ class IR():
     def emitCall(self, _target, _nParams = None, _returnVal = None):
         tac = TAC(InstrType.call, "call")
         tac.target = _target
-        tac.src1 = _nParams
-        tac.src2 = _returnVal
+        tac.src1 = {
+            "place":_nParams,
+            "type": "const_int",
+            "offset": 4
+        }
+        tac.dest = _returnVal
         # make the target a string (for printing purpose only)
         _nParams = _nParams if _nParams != None else ""
         _returnVal = _returnVal if _returnVal != None else {"place": ""}

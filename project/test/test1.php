@@ -7,21 +7,28 @@
     $a = 112;
     $b = $a + 1;
     $a = $a + 1;
-    $c = "f";
-    $d += $c;
-    $c = 4;
-    // if($a== $b || $a==3 ){
-    //     $c= 9;
-    // }
-    $d = 5;
-    // $c = $a > 25 ? $a - 10 : $b + 5;
-    
-    // function sum($a,$b){
-    //     $c = $a + 1;
-    //     return $a;
-    //     $c = $a + $b;
-    //     return $c;
-    // }
-    // $c = sum($a,$b);
+    $a = $b + 1;
+    $c = $a > 25 ? $a - 10 : $b + 5;
+    if($c == $b){
+        $c = 1;
+    }
+    while($c > 0){
+        ++$c;
+    }
+    $d = 1;
+    $e = $d + 1;
+    $f = $d * $e;
+    function sum(){
+        $c = 1;
+        $d = 10;
+        return $c;
+    }
+    function foo(){
+        $c = 1;
+        return $c;
+    }
+    sum();
+    $d = foo();
     // echo $c;
+    $c = 1;
  ?>

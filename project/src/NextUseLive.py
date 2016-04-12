@@ -52,7 +52,8 @@ def NextUseLive(bbNode):
             if operand != None: 
                 if "const_" not in operand["type"]:
                     if not operand in nonTempVars:
-                        nonTempVars.append(operand)       
+                        nonTempVars.append(operand)
+       
     # Now intialize out symbol table
     for i in range(countLines+1):             # for each line
         varsObject = {}

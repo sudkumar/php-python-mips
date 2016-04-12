@@ -19,6 +19,7 @@ if __name__ == '__main__':
     ir = result["ir"]
     ir.printTac()
     stm = result["stm"]
+    # printStm(stm.root)
     code = CodeGen(ir, stm)
     print "\t.text"
     print "\t.globl main\n"
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     codeBlocks = code._codeBlocks
     # add the library functions
     # Now add the generated block by code generator
-    i = 1
+    i = 0
     for node in codeBlocks:   
         print "B"+str(i)+":"
         print "\t"+"\n\t".join(node)
@@ -43,7 +44,9 @@ if __name__ == '__main__':
 
 
     print "\n\t.data"
-    for var in code._globalVars:
-        print "g_"+str(var) + ":\t.word\t0"
+    globalSyms = stm.root.symbols
+    for var in globalSyms.keys():
+        if globalSyms[var]["type"] != "proc":
+            print str(globalSyms[var]["place"]) + ":\t.word\t0"
     
     
