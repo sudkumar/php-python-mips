@@ -340,9 +340,9 @@ def p_stmt_switch(p):
         jump = jumps[i]
         isDefault = default[i]
         if not isDefault:
-            ir.emitCjump("==", p[3], expr, str(jump))
+            ir.emitCjump("==", p[3], expr, jump)
         else:
-            ir.emitUjump(str(jump))
+            ir.emitUjump(jump)
     p[0]["nextlist"] = p[6]["nextlist"]
 
 
@@ -646,23 +646,23 @@ def p_expr_assign(p):
     name = p[1]["place"]
     attrs = stm.lookup(name)
     symType = attrs["type"]
-    offset = attrs["offset"]
-    
+    offset = attrs["offset"] 
     if(len(p)==4):
         if not p[3]["type"]:
-            print "Variable "+ p[3]["place"]+" used before assignment."
+            raise NameError("Variable "+ p[3]["place"]+" used before assignment at line number "+ str(p.lexer.lineno))
         if(symType and symType != p[3]["type"]):
-            print "type casting error for "+ str(name) + " and " + p[3]["place"]
-        else:
-            # update the type and offset for the variable
-            symType = p[3]["type"]
-            offset = p[3]["offset"]
-            stm.setAttr(name, "place", name)
-            stm.setAttr(name, "type", symType)
-            stm.setAttr(name, "offset", offset)
-            p[1]["type"] = symType
-            p[1]["offset"] = offset
-            
+            print "Warning! type casting for variable "+ str(name) + " at line number "+ str(p.lexer.lineno)
+            # p[1]["type"] = symType
+            # p[1]["offset"] = offset
+
+        # update the type and offset for the variable
+        symType = p[3]["type"]
+        offset = p[3]["offset"]
+        stm.setAttr(name, "place", name)
+        stm.setAttr(name, "type", symType)
+        stm.setAttr(name, "offset", offset)
+        p[1]["type"] = symType
+        p[1]["offset"] = offset
         global ir
         ir.emitCopy(p[1], p[3])
     else:
@@ -782,7 +782,7 @@ def p_expr_assign_op(p):
           | variable MOD_EQ expr'''
     global ir
     if p[1]["type"] != p[3]["type"]:
-        print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
+        print "Warning! type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]+ " at line number "+ str(p.lexer.lineno)
     ir.emitAssgn(p[2][0], p[1], p[1], p[3])
     p[0] = p[1]
 
@@ -802,7 +802,7 @@ def p_expr_arith(p):
     global ir
     name = ir.newTemp()
     if p[1]["type"] != p[3]["type"]:
-        print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"]
+        print "Type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"] + " at line number "+ str(p.lexer.lineno)
     symType = p[1]["type"]
     offset = p[1]["offset"]
     global stm
@@ -838,12 +838,11 @@ def p_expr_binary_relop(p):
           | expr GREATER_EQ  expr
           | expr INSTANCEOF  expr'''
     global ir
-    p[0] = {}
+    p[0] = {"type" : "bool" , "offset":1}
     p[0]["truelist"] = ir.makeList(ir.nextquad)
-    p[0]["falselist"] = ir.makeList(ir.nextquad+1)
+    p[0]["falselist"] = ir.makeList(ir.nextquad+1) 
     ir.emitCjump(p[2], p[1], p[3])
     ir.emitUjump()
-
 def p_expr_unary_op(p):
     '''expr : PLUS expr
           | MINUS expr
@@ -929,14 +928,26 @@ def p_expr_ternary_op(p):
 def p_expr_pre_incdec(p):
     '''expr : INC variable
           | DEC variable'''
-    global ir
+    global ir 
+    if(p[2]["type"]==None):
+        raise NameError("variable "+p[2]["place"] +" is not defined at line no "+str(p.lexer.lineno))
+
     ir.emitAssgn(p[1][0], p[2], p[2], {"place":"1", "type": "int", "offset": 4})
+    stm.setAttr(p[2]["place"], "type", "int")
     p[0] = p[2]
 
 def p_expr_post_incdec(p):
     '''expr : variable INC
           | variable DEC'''
-    p[0] = p[1]
+    global ir 
+    if(p[1]["type"]==None):
+        raise NameError(" variable "+p[1]["place"] +" is not defined at line no "+str(p.lexer.lineno)+"\n")
+    name = ir.newTemp()
+    p[0] = {"place" : name , "type": "int" , "offset" : 4}
+
+    ir.emitCopy(p[0],p[1])
+    ir.emitAssgn(p[2][0], p[1], p[1], {"place":"1", "type": "int", "offset": 4})
+    stm.setAttr(p[1]["place"], "type", "int")
 
 def p_expr_empty(p):
     'expr : EMPTY LPAREN expr RPAREN'
