@@ -94,6 +94,7 @@ class FlowGraph():
                     if i < countLeaders-1:
                         nodes[i].addSucc(nodes[i+1])
                     else:
+                        print leaders
                         # it is the last `leader`
                         nodes[i].addSucc(exitNode)
                 

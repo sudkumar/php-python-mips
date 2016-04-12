@@ -46,6 +46,8 @@ class RegAlloc():
         if not allocatedR:
             print "Unable to get any register by spill for var at:" + ', '.join(map(str, operands["place"]))
 
+
+
         return allocatedR
 
 
@@ -83,7 +85,6 @@ class RegAlloc():
                 # print var
                 # print nextUse
                 if nextUse[var["place"]][0] == 0 and nextUse[var["place"]][1] == -1 and self._regDis.isOnlyVar(reg, var):
-                    print nextUse
                     return reg
 
                 # if we are not "OK" by one of the first two cases, then we need to generate the store instruction `store v, R` to 

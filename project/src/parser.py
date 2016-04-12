@@ -340,9 +340,9 @@ def p_stmt_switch(p):
         jump = jumps[i]
         isDefault = default[i]
         if not isDefault:
-            ir.emitCjump("==", p[3], expr, str(jump))
+            ir.emitCjump("==", p[3], expr, jump)
         else:
-            ir.emitUjump(str(jump))
+            ir.emitUjump(jump)
     p[0]["nextlist"] = p[6]["nextlist"]
 
 

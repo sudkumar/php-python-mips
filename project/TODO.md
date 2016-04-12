@@ -1,6 +1,4 @@
 ## TODO
-- conditional
-- unconditional
 - func_declaration
 - return
 - params
@@ -10,3 +8,5 @@
 ## DONE
 - copy codegen
 - assgn codegen
+- conditional
+- unconditional
