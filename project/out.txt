@@ -1,4 +1,7 @@
-['TypeError: at line number 25, expected boolean, int given.']
+{'type': 'stmt'}
+{'type': 'stmt'}
+{'type': 'stmt'}
+['TypeError: at line number 16, expected boolean, stmt given.', 'TypeError: at line number 19, expected boolean, stmt given.', "TypeError: while statement expects boolean condition, 'stmt'' given."]
 []
 t1 = 10
 t2 = 20
@@ -32,43 +35,40 @@ goto 30
 t18 = t17
 $c = t18
 t19 = 0
-if $c == t19 goto 34
-goto 37
+$c = t19
 t20 = 1
 $c = t20
-goto 42
-t21 = 2
-if $c == t21 goto 40
-goto 42
-t22 = 0
+goto 40
+t21 = 0
+$c = t21
+t22 = 1
 $c = t22
 t23 = 0
-t24 = $c + t23
+$c = t23
 $c = $c + 1
-$c = $c + 1
-goto 42
+goto 40
+t24 = 1
+$d = t24
 t25 = 1
-$d = t25
-t26 = 1
-t27 = $d + t26
-$e = t27
-t28 = $d * $e
-$f = t28
-goto 60
-t29 = 1
-$c = t29
-t30 = 10
-$d = t30
+t26 = $d + t25
+$e = t26
+t27 = $d * $e
+$f = t27
+goto 57
+t28 = 1
+$c = t28
+t29 = 10
+$d = t29
 ret $c
-goto 64
-t31 = 1
-$c = t31
+goto 61
+t30 = 1
+$c = t30
 ret $c
-call 55 0 t32
-call 61 0 t33
-$d = t33
-t34 = 1
-$c = t34
+call 52 0 t31
+call 58 0 t32
+$d = t32
+t33 = 1
+$c = t33
 	.text
 	.globl main
 
@@ -131,106 +131,91 @@ B5:
 B6:
 	lw $t2, t18
 	li $t3, 0
-	sw $t2, $c
-	sw $t3, t19
-	beq $t2, $t3, B8
-B7:
-	j B9
-B8:
 	li $t1, 1
-	sw $t1, t20
 	sw $t1, $c
-	j B12
-B9:
-	li $t0, 2
-	lw $t2, $c
-	sw $t0, t21
-	beq $t2, $t0, B11
-B10:
-	j B12
-B11:
-	li $t3, 0
-	sw $t3, t22
-	sw $t3, $c
-B12:
-	li $t1, 0
-	lw $t0, $c
-	add $t3, $t0, $t1
-	lw $t2, 1
-	add $t0, $t0, $t2
-	add $t0, $t0, $t2
-	sw $t1, t23
-	sw $t3, t24
-	sw $t0, $c
-	j B12
-B13:
+	sw $t3, t19
+	sw $t1, t20
+	j B8
+B7:
+	li $t0, 0
 	li $t1, 1
-	li $t3, 1
-	add $t2, $t1, $t3
-	mul $t0, $t1, $t2
-	sw $t1, t25
-	sw $t1, $d
+	sw $t0, t21
+	sw $t1, $c
+	sw $t1, t22
+B8:
+	li $t2, 0
+	lw $t3, 1
+	add $t1, $t2, $t3
+	sw $t2, t23
+	sw $t1, $c
+	j B8
+B9:
+	li $t0, 1
+	li $t2, 1
+	add $t3, $t0, $t2
+	mul $t1, $t0, $t3
+	sw $t0, t24
+	sw $t0, $d
+	sw $t2, t25
 	sw $t3, t26
-	sw $t2, t27
-	sw $t2, $e
-	sw $t0, t28
-	sw $t0, $f
-	j B15
-B14:
+	sw $t3, $e
+	sw $t1, t27
+	sw $t1, $f
+	j B11
+B10:
 	addi $sp, -8
 	sw $ra, 0($sp)
 	sw $fp, 4($sp)
 	move $fp, $sp
 	addi $sp, -8
-	li $t1, 1
-	li $t3, 10
-	sw $t1, t29
-	sw $t1, $c
-	sw $t3, t30
-	sw $t3, $d
-	move $v0, $t1
+	li $t0, 1
+	li $t2, 10
+	sw $t0, t28
+	sw $t0, $c
+	sw $t2, t29
+	sw $t2, $d
+	move $v0, $t0
 	move $sp, $fp
 	lw $ra, 0($sp)
 	lw $fp, 4($sp)
 	addi $sp, $sp, 8
 	jr $ra
-B15:
-	j B17
-B16:
+B11:
+	j B13
+B12:
 	addi $sp, -8
 	sw $ra, 0($sp)
 	sw $fp, 4($sp)
 	move $fp, $sp
 	addi $sp, -4
-	li $t2, 1
-	sw $t2, t31
-	sw $t2, $c
-	move $v0, $t2
+	li $t3, 1
+	sw $t3, t30
+	sw $t3, $c
+	move $v0, $t3
 	move $sp, $fp
 	lw $ra, 0($sp)
 	lw $fp, 4($sp)
 	addi $sp, $sp, 8
 	jr $ra
-B17:
-	jal B14
+B13:
+	jal B10
+	move $t1, $v0
+	sw $t1, t31
+B14:
+	jal B12
 	move $t0, $v0
 	sw $t0, t32
-B18:
-	jal B16
-	move $t1, $v0
-	sw $t1, t33
-B19:
-	lw $t3, t33
-	li $t2, 1
-	sw $t3, $d
-	sw $t2, t34
-	sw $t2, $c
+B15:
+	lw $t2, t32
+	li $t3, 1
+	sw $t2, $d
+	sw $t3, t33
+	sw $t3, $c
 	j _exit_
 
 	.data
 $e:	.word	0
 t8:	.word	0
-t28:	.word	0
 $f:	.word	0
 $d:	.word	0
 t5:	.word	0
@@ -243,5 +228,5 @@ t17:	.word	0
 t10:	.word	0
 t12:	.word	0
 t18:	.word	0
-t24:	.word	0
 t27:	.word	0
+t26:	.word	0

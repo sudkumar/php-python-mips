@@ -36,7 +36,7 @@ precedence = (
   ('right', 'STATIC', 'ABSTRACT', 'FINAL', 'PRIVATE', 'PROTECTED', 'PUBLIC'),
   )
 
-warnings = []
+
 errors = []
 
 def p_start(p):
@@ -165,6 +165,7 @@ def p_if_stmt_without_else(p):
     global ir
     p[0] = {}
     if(len(p)==7):
+        print p[3]
         if(p[3]):
             if("truelist" in p[3]):
                 ir.backpatch(p[3]["truelist"], p[5]["quad"])
@@ -265,20 +266,17 @@ def p_alt_if_stmt_without_else(p):
 def p_stmt_while(p):
     'stmt : WHILE LPAREN jump_marker expr jump_marker RPAREN while_stmt goto_marker'
     global ir
+    print p[4] 
     p[0] = {}
     looplist = ir.mergeList(p[7]["continuelist"], p[7]["nextlist"], p[8]["nextlist"])
     ir.backpatch(looplist, p[3]["quad"])
 
-    if(p[4]):
-        if("truelist" in p[4]):
-            ir.backpatch(p[4]["truelist"], p[5]["quad"])    
-            p[0]["nextlist"] = ir.mergeList(p[4]["falselist"], p[7]["breaklist"])
-        else:
-            p[0]["nextlist"] = p[7]["breaklist"]
-            errors.append("TypeError: at line number "+ str(p.lexer.lineno)+ ", expected boolean, "+ p[4]["type"] + " given.")
+    if(p[4]["type"]=="bool"):
+        ir.backpatch(p[4]["truelist"], p[5]["quad"])    
+        p[0]["nextlist"] = ir.mergeList(p[4]["falselist"], p[7]["breaklist"])
     else:
         p[0]["nextlist"] = p[7]["breaklist"]
-        errors.append("TypeError: at line number "+ str(p.lexer.lineno)+ ", expected boolean.")
+        errors.append("TypeError: while statement expects boolean condition, '"+ str(p[4]["type"]) + "'' given.")
 
 def p_while_stmt(p):
     '''while_stmt : stmt
@@ -690,7 +688,7 @@ def p_expr_assign(p):
     # SYMBOL TABLE STUFF
     # lookup for the variable into symbol table
     global stm
-
+    p[0] = {}
     name = p[1]["place"]
     attrs = stm.lookup(name)
     symType = attrs["type"]
@@ -699,8 +697,8 @@ def p_expr_assign(p):
         if not p[3]["type"]:            
             errors.append("NameError: at line number "+ str(p.lexer.lineno)+", variable "+ p[3]["place"]+" used before assignment.")
         if(symType and symType != p[3]["type"]):
-            warnings.append("Warning: at line number "+ str(p.lexer.lineno)+", type casting for variable "+ str(name))
-        else:    
+            errors.append("Warning: at line number "+ str(p.lexer.lineno)+", type casting for variable "+ str(name))
+        else:
             # update the type and offset for the variable
             symType = p[3]["type"]
             offset = p[3]["offset"]
@@ -711,6 +709,7 @@ def p_expr_assign(p):
             p[1]["offset"] = offset
             global ir
             ir.emitCopy(p[1], p[3])
+        p[0]["type"] = "stmt" 
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
 
@@ -828,7 +827,7 @@ def p_expr_assign_op(p):
           | variable MOD_EQ expr'''
     global ir
     if p[1]["type"] != p[3]["type"]:
-        warnings.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
+        errors.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
 
     ir.emitAssgn(p[2][0], p[1], p[1], p[3])
     p[0] = p[1]
@@ -849,7 +848,7 @@ def p_expr_arith(p):
     global ir
     name = ir.newTemp()
     if p[1]["type"] != p[3]["type"]:
-        warnings.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
+        errors.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
 
     symType = p[1]["type"]
     offset = p[1]["offset"]
@@ -1125,7 +1124,7 @@ def runIR():
 
     result = parser.parse(data,debug=0)
     print errors
-    print warnings
+
     # result = parser.parse(data,debug=log)
     return result
 
