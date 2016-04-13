@@ -27,18 +27,28 @@ class SymbolTable():
         attrs["place"] = _name
         attrs["type"] = _type
         attrs["width"] = _width
-        # now add the scope
+        # add the scope to the variable
         if _scope != None:
             attrs["scope"] = _scope
         else:
             if self.parent != None:
+                # We are not in the root symbol table
+                # This is a function table and so symbol needs a memory location on stack
+                # Assign it a offset from base of the function which is current width of the table
                 attrs["scope"] = "local"
+                attrs["offset"] = self.width
             else:
+                # We are in root symbol table
+                # Variables are in global scope. Memory location for these variables is statically 
+                # assigned at compile time which is equal to place of these symboles
+                # No need to assign them an offset
                 attrs["scope"] = "global"
+                attrs["offset"] = -1
 
-        self.addWidth(_width)
         # attach the attributes for the name in the symbol table
         self.symbols[_name] = attrs
+        # update the width of the symbol table by adding the width of the current symbol
+        self.addWidth(_width)
 
 
 
@@ -93,8 +103,11 @@ class SymbolTable():
             # create a attributes dictionary for symbol
             self.symbols[_symbol] = {}
             self.symbols[_symbol][_key] = _val
-        # check of we added the any offset
+        # check of we added the any width
         if _key == "width":
+            # update the offset of that symbol
+            self.symbols[_symbol]["offset"] = self.width
+            # update the width of the current symbol table
             self.addWidth(_val)
 
     """ Get attribute
