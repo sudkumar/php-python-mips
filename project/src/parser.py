@@ -119,8 +119,8 @@ def p_param(p):
     global stm
     p[0] ={}
     if(len(p)==2):
-        stm.insert(p[1], "int", 4)
-        p[0]["type"] = "int"
+        stm.insert(p[1], None, 0)
+        p[0]["type"] = None
         p[0]["numParams"] = 1
     elif(len(p)==3):
         p[0] = {"param":[p[1],p[2]]}
@@ -582,7 +582,7 @@ def p_func_call(p):
         errors.append("NameError: at line number "+ str(p.lexer.lineno)+", function "+name +" is not defined.")
     else:
         tmp = ir.newTemp()
-        p[0] = {"place" : tmp , "type": "int" , "offset" : 4}
+        p[0] = {"place" : tmp , "type": "int" , "width" : 4}
         ir.emitCall(attrs["lineNumber"], p[3]["numParams"],p[0])
 
 def p_func_params(p):
@@ -623,13 +623,13 @@ def p_reference_variable_array_offset(p):
         name = p[1]
         attrs = stm.lookup(name)
         symType = None
-        offset = 0
+        width = 0
         if not attrs:
-            stm.insert(p[1], symType, offset)
+            stm.insert(p[1], symType, width)
         else:
             symType = attrs["type"]
-            offset = attrs["offset"]
-        p[0] = {"place": p[1], "type": symType, "offset": offset}
+            width = attrs["width"]
+        p[0] = {"place": p[1], "type": symType, "width": width}
     else:
         p[0] = {"base_var":[p[1],p[2],p[3],p[4]]}
 
@@ -649,21 +649,21 @@ def p_expr_assign(p):
     name = p[1]["place"]
     attrs = stm.lookup(name)
     symType = attrs["type"]
-    offset = attrs["offset"] 
+    width = attrs["width"] 
     if(len(p)==4):
         if not p[3]["type"]:            
             errors.append("NameError: at line number "+ str(p.lexer.lineno)+", variable "+ p[3]["place"]+" used before assignment.")
         if(symType and symType != p[3]["type"]):
             warnings.append("Warning: at line number "+ str(p.lexer.lineno)+", type casting for variable "+ str(name))
         else:    
-            # update the type and offset for the variable
+            # update the type and width for the variable
             symType = p[3]["type"]
-            offset = p[3]["offset"]
+            width = p[3]["width"]
             stm.setAttr(name, "place", name)
             stm.setAttr(name, "type", symType)
-            stm.setAttr(name, "offset", offset)
+            stm.setAttr(name, "width", width)
             p[1]["type"] = symType
-            p[1]["offset"] = offset
+            p[1]["width"] = width
             global ir
             ir.emitCopy(p[1], p[3])
     else:
@@ -807,11 +807,11 @@ def p_expr_arith(p):
         warnings.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
 
     symType = p[1]["type"]
-    offset = p[1]["offset"]
+    width = p[1]["width"]
     global stm
-    stm.insert(name, symType, offset)
+    stm.insert(name, symType, width)
 
-    p[0] = {"place": name, "type": symType, "offset": offset}
+    p[0] = {"place": name, "type": symType, "width": width}
 
     ir.emitAssgn(p[2], p[0], p[1], p[3])
 
@@ -843,7 +843,7 @@ def p_expr_binary_relop(p):
           | expr GREATER_EQ  expr
           | expr INSTANCEOF  expr'''
     global ir
-    p[0] = {"type" : "bool" , "offset":1}
+    p[0] = {"type" : "bool" , "width":1}
     p[0]["truelist"] = ir.makeList(ir.nextquad)
     p[0]["falselist"] = ir.makeList(ir.nextquad+1) 
     ir.emitCjump(p[2], p[1], p[3])
@@ -862,13 +862,13 @@ def p_expr_unary_op(p):
         global ir
         name = ir.newTemp()
         symType = p[2]["type"]
-        offset = p[2]["offset"]
+        width = p[2]["width"]
         global stm
-        stm.insert(name, symType, offset)
+        stm.insert(name, symType, width)
 
-        p[0] = {"place": name, "type": symType, "offset": offset}
+        p[0] = {"place": name, "type": symType, "width": width}
         ir.emitAssgn( p[1], p[0],
-            {"place": "0", "type": "CONST_DECIMAL", "offset": 4},
+            {"place": "0", "type": "CONST_DECIMAL", "width": 4},
             p[2])
 
 def p_exp_scalar(p):
@@ -883,7 +883,7 @@ def p_exp_scalar(p):
     tmp = ir.newTemp()
     p[0] = {}
     p[0]["type"] = p[1]["type"]
-    p[0]["offset"] = p[1]["offset"]
+    p[0]["width"] = p[1]["width"]
     p[0]["place"] = tmp
 
     p[1]["type"] = "const_"+p[1]["type"]
@@ -927,8 +927,8 @@ def p_expr_ternary_op(p):
     ir.backpatch(firstAsgnList, ir.nextquad)
 
     p[0]["type"] = p[4]["type"]
-    p[0]["offset"] = p[4]["offset"]
-    stm.insert(p[0]["place"], p[0]["type"], p[0]["offset"])
+    p[0]["width"] = p[4]["width"]
+    stm.insert(p[0]["place"], p[0]["type"], p[0]["width"])
 
 def p_expr_pre_incdec(p):
     '''expr : INC variable
@@ -937,7 +937,7 @@ def p_expr_pre_incdec(p):
     if(p[2]["type"]==None):         
         errors.append("NameError: at line number "+ str(p.lexer.lineno)+",variable "+p[2]["place"] +" is not defined.")
 
-    ir.emitAssgn(p[1][0], p[2], p[2], {"place":"1", "type": "int", "offset": 4})
+    ir.emitAssgn(p[1][0], p[2], p[2], {"place":"1", "type": "int", "width": 4})
     stm.setAttr(p[2]["place"], "type", "int")
     p[0] = p[2]
 
@@ -949,10 +949,10 @@ def p_expr_post_incdec(p):
         errors.append("NameError: at line number "+ str(p.lexer.lineno)+",variable "+p[1]["place"] +" is not defined.")
 
     name = ir.newTemp()
-    p[0] = {"place" : name , "type": "int" , "offset" : 4}
+    p[0] = {"place" : name , "type": "int" , "width" : 4}
 
     ir.emitCopy(p[0],p[1])
-    ir.emitAssgn(p[2][0], p[1], p[1], {"place":"1", "type": "int", "offset": 4})
+    ir.emitAssgn(p[2][0], p[1], p[1], {"place":"1", "type": "int", "width": 4})
     stm.setAttr(p[1]["place"], "type", "int")
 
 def p_expr_empty(p):

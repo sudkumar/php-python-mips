@@ -58,13 +58,13 @@ def t_STRING(t):
 #floating constant defination
 def t_CONST_DOUBLE(t):
     r'(([0-9]*[.]*[0-9]+)([eE][-]?)([0-9]+))|([0-9]*[\.][0-9]+)'
-    t.value = {"type" : t.type, "value": t.value, "offset": 8}
+    t.value = {"type" : t.type, "value": t.value, "width": 8}
     return t
 
 #string constant defination
 def t_CONST_STRING(t):
     r'(("(\\?(.|[\r\n]))*?")|(\'(\\?(.|[\r\n]))*?\'))'
-    t.value = {"type" : "string", "place": t.value, "offset": len(t.value)-2}
+    t.value = {"type" : "string", "place": t.value, "width": len(t.value)-2}
     return t
 
 def t_COMMENT(t):
@@ -73,19 +73,19 @@ def t_COMMENT(t):
 #integer constant defination
 def t_CONST_DECIMAL(t):
     r'([1-9]\d*)|(0)'
-    t.value = {"type" : "int", "place": t.value, "offset": 4}
+    t.value = {"type" : "int", "place": t.value, "width": 4}
     return t
 def t_CONST_HEX(t):
     r'0[xX][\da-fA-F]+'
-    t.value = {"type" : "hex", "place": t.value, "offset": 4}
+    t.value = {"type" : "hex", "place": t.value, "width": 4}
     return t
 def t_CONST_OCTAL(t):
     r'0[0-7]+'
-    t.value = {"type" : "octal", "place": t.value, "offset": 8}
+    t.value = {"type" : "octal", "place": t.value, "width": 8}
     return t
 def t_CONST_BINARY(t):
     r'0b[01]+'
-    t.value = {"type" : "bin", "place": t.value, "offset": 1}
+    t.value = {"type" : "bin", "place": t.value, "width": 1}
     return t
 
 

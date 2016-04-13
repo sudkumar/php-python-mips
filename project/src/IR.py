@@ -59,7 +59,7 @@ class IR():
         tac.src1 = {
             "place":_nParams,
             "type": "const_int",
-            "offset": 4
+            "width": 4
         }
         tac.dest = _returnVal
         # make the target a string (for printing purpose only)
