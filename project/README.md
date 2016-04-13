@@ -44,7 +44,7 @@
 
 - test
 
-Test cases contaning php src code.
+    Test cases containing php src code.
 
 
 - makefile
@@ -56,3 +56,13 @@ Test cases contaning php src code.
 
     make clean
     make
+
+
+    
+## Execute Assembly Code
+
+   run these command in terminal one by one
+
+    $ spim
+    $ load "out.s"
+    $ run

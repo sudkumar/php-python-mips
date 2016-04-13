@@ -1,22 +1,3 @@
-t1 = 10
-$y = t1
-goto 14
-t2 = 1
-t3 = 1
-$y = t3
-goto 17
-t4 = 2
-t5 = 2
-$y = t5
-goto 17
-t6 = 3
-$y = t6
-goto 17
-if $y == t2 goto 4
-if $y == t4 goto 8
-goto 11
-t7 = 10
-$y = t7
 	.text
 	.globl main
 
