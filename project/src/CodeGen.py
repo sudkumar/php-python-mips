@@ -44,7 +44,8 @@ class CodeGen():
         # For each node in blockNode of flow graph as node:
         nodeNumber = -1
         for node in blockNodes:
-
+            if(len(node._parentNodes)==0):
+                continue
              # Create the Register and Address Descriptor for all available register and variables.
             # The Address Descriptor table, contains information about all the non local variables's value location
             self._addrDis = AddrDis()      

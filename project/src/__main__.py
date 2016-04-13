@@ -23,7 +23,7 @@ if __name__ == '__main__':
             print error
         exit()
     ir = result["ir"]
-    # ir.printTac()
+    ir.printTac()
     stm = result["stm"]
     # printStm(stm.root)
     code = CodeGen(ir, stm)

@@ -11,10 +11,11 @@ class Node():
     def __init__(self, block):
         self._block = block
         self._nextNodes = []
+        self._parentNodes = []
         
     def addSucc(self, newNode):
         self._nextNodes.append(newNode)
-
+        newNode._parentNodes.append(self)
 
 class FlowGraph():
     """Create the Flow Graph for Intermediate Representation
@@ -89,12 +90,12 @@ class FlowGraph():
                 ltac.updateTarget("B"+str(leaders.index(ltac.target)))
 
                 # check if it a conditional jump instructions
-                if ltac.type == InstrType.cjump:
+                if ltac.type == InstrType.cjump or ltac.type == InstrType.call:
                     # the next `leader` is my successor
                     if i < countLeaders-1:
                         nodes[i].addSucc(nodes[i+1])
                     else:
-                        print leaders
+                        # print leaders
                         # it is the last `leader`
                         nodes[i].addSucc(exitNode)
                 
