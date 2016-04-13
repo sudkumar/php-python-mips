@@ -14,8 +14,10 @@ class Node():
         self._parentNodes = []
         
     def addSucc(self, newNode):
-        self._nextNodes.append(newNode)
-        newNode._parentNodes.append(self)
+        if newNode  not in self._nextNodes:
+            self._nextNodes.append(newNode)
+        if self  not in newNode._parentNodes:
+            newNode._parentNodes.append(self)
 
 class FlowGraph():
     """Create the Flow Graph for Intermediate Representation
@@ -48,7 +50,6 @@ class FlowGraph():
 
         # add the links between nodes
         self.addLinks(bbs._leaders)
-
 
 
     def addNodes(self, tac, leaders):
@@ -85,7 +86,7 @@ class FlowGraph():
                     continue
 
                 # it's a jump instruction, so get the target `leader` and add that to my successor  
-                nodes[i].addSucc(nodes[leaders.index(ltac.target)])
+                nodes[i].addSucc(nodes[leaders.index(ltac.target)+1])
                 # update the target to point to the successor instead of line number   
                 ltac.updateTarget("B"+str(leaders.index(ltac.target)))
 

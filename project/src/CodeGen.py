@@ -44,9 +44,7 @@ class CodeGen():
         # For each node in blockNode of flow graph as node:
         nodeNumber = -1
         for node in blockNodes:
-            if(len(node._parentNodes)==0):
-                continue
-             # Create the Register and Address Descriptor for all available register and variables.
+            # Create the Register and Address Descriptor for all available register and variables.
             # The Address Descriptor table, contains information about all the non local variables's value location
             self._addrDis = AddrDis()      
             # The Register Descriptor table, contains information about allocation of all the registers
@@ -55,10 +53,16 @@ class CodeGen():
             
 
             self._regAlloc = RegAlloc(self._st, self._regDis, self._addrDis)
+            self._newBlockIns = []
 
             blockIns = node._block
             if blockIns == "entry" or blockIns == "exit":
                 # entry and exit nodes, continue
+                continue
+
+            # Some dead code elimination if a node don't have link to it's parents
+            if(len(node._parentNodes)==0):
+                self._codeBlocks.append(self._newBlockIns)
                 continue
 
             # Generate the Next-Use-Live for `blockIns`.
@@ -73,7 +77,6 @@ class CodeGen():
 
             #- For each Instruction `Ins` in `blockIns`:
             i = 0
-            self._newBlockIns = []
             jumpIns = []
             countBlock = len(blockIns)
             nodeNumber+= 1
@@ -310,7 +313,7 @@ class CodeGen():
             # insrts.append("sw $ra, 0($sp)")
 
             if tac.type == InstrType.call:
-                insrts.append("jal "+tac.target)
+                jumpIns.append("jal "+tac.target)
             else:
                 insrts.append("jal "+LibFns[tac.target])
                 insrts.append("addi  $sp, 4")
@@ -325,11 +328,16 @@ class CodeGen():
                 allocatedR = self._regAlloc.getReg(dest, tac, nextUse, {})
                 self._regAlloc.removeFromFree(allocatedR) 
                 self.storeSpilled(allocatedR) 
-                insrts.append("move "+ allocatedR + ", $v0")
+                jumpIns.append("move "+ allocatedR + ", $v0")
+                if dest["offset"] == -1:
+                    jumpIns.append("sw "+ allocatedR + ", g_"+dest["place"].replace("$","_",1))
+                else:
+                    jumpIns.append("sw "+ allocatedR + ", "+str(dest["offset"])+"($sp)")
+
                 # allocatedR = "$v0"
                 # update the discriptor of destination and allocated R
                 self.updateRegAddrOfDest(dest, allocatedR)
-            
+                
         else:
             insrts.append("j "+LibFns[tac.target])
 
