@@ -70,8 +70,8 @@ class STManager():
         @params _type {string} -- type of name (an attribute)
         @params _offset {integer} -- size | offset for the name
     """
-    def insert(self, _name, _type, _width):
-        return self.currActive.insert(_name, _type, _width)
+    def insert(self, _name, _type, _width, _scope=None):
+        return self.currActive.insert(_name, _type, _width, _scope)
 
 
     """ Add link to global variable into the current active symbol table

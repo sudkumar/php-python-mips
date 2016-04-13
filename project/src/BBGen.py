@@ -45,8 +45,8 @@ class BBGen():
                 # self.addLeader(tac.lineNumber)       # it was a label, so is a `leader`
             
             # check for instruction type to be a jump
-            elif(opType in JumpInstructions):
-                if(opType != InstrType.ret):
+            if(opType in JumpInstructions):
+                if not (opType == InstrType.ret or opType == InstrType.libFn):
                     # get the jump target of this line, as it'll be a `leader`, must be an integer
                     self.addLeader(tac.target)
                 
@@ -55,13 +55,13 @@ class BBGen():
                         self._fns.append(tac.target)
 
                 # it was a jump statement, so next line will be the `leader` if it exists
-                if (opType in [InstrType.cjump, InstrType.ujump, InstrType.ret, InstrType.call]):
-                    i += 1
-                    if i < countIRLines:
-                        self.addLeader(i) 
-                        continue 
-                    else:
-                        break                                   # reached at end of file
+                # if (opType in [InstrType.cjump, InstrType.ujump, InstrType.ret, InstrType.call]):
+                i += 1
+                if i < countIRLines:
+                    self.addLeader(i) 
+                    continue 
+                else:
+                    break                                   # reached at end of file
             i += 1      # go to next line
 
         # finally sort the `leaders` 

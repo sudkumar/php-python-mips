@@ -124,8 +124,8 @@ def p_param(p):
     global stm
     p[0] ={}
     if(len(p)==2):
-        stm.insert(p[1], None, 0)
-        p[0]["type"] = None
+        stm.insert(p[1], "int", 4, "params")
+        p[0]["type"] = "int"
         p[0]["numParams"] = 1
     elif(len(p)==3):
         p[0] = {"param":[p[1],p[2]]}
@@ -565,7 +565,7 @@ def p_stmt_expr(p):
     p[0] = p[1]
 
 def p_inner_stmts(p):
-    '''inner_stmts : inner_stmts jump_marker inner_stmt
+    '''inner_stmts : inner_stmt jump_marker inner_stmts
                             | empty'''
 
     p[0] = {}

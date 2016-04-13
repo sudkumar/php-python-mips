@@ -23,9 +23,10 @@ if __name__ == '__main__':
             print error
         exit()
     ir = result["ir"]
-    ir.printTac()
+    # ir.printTac()
     stm = result["stm"]
     # printStm(stm.root)
+    # exit()
     code = CodeGen(ir, stm)
     print "\t.text"
     print "\t.globl main\n"

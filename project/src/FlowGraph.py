@@ -36,7 +36,6 @@ class FlowGraph():
         # Generate the basic blocks
         bbs = BBGen(tac)
 
-
         # container for all block nodes
         self._blockNodes = []
 
@@ -79,22 +78,23 @@ class FlowGraph():
                 continue    
 
             # get the last instruction
-            print nodes[i]._block
             if len(nodes[i]._block) > 0:
                 ltac = nodes[i]._block[-1]
             else:
                 continue
+
             if ltac.type in JumpInstructions:
                 if ltac.type == InstrType.ret:
                     continue
 
-                # it's a jump instruction, so get the target `leader` and add that to my successor  
-                nodes[i].addSucc(nodes[leaders.index(ltac.target)+1])
-                # update the target to point to the successor instead of line number   
-                ltac.updateTarget("B"+str(leaders.index(ltac.target)))
+                if ltac.type != InstrType.libFn:
+                    # it's a jump instruction, so get the target `leader` and add that to my successor  
+                    nodes[i].addSucc(nodes[leaders.index(ltac.target)+1])
+                    # update the target to point to the successor instead of line number   
+                    ltac.updateTarget("B"+str(leaders.index(ltac.target)))
 
                 # check if it a conditional jump instructions
-                if ltac.type == InstrType.cjump or ltac.type == InstrType.call:
+                if ltac.type == InstrType.cjump or ltac.type == InstrType.call or ltac.type == InstrType.libFn:
                     # the next `leader` is my successor
                     if i < countLeaders-1:
                         nodes[i].addSucc(nodes[i+1])

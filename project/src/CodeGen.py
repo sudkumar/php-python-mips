@@ -62,7 +62,11 @@ class CodeGen():
 
             # Some dead code elimination if a node don't have link to it's parents
             if(len(node._parentNodes)==0):
+                # remove me from my children's parent as they also won't be accessible by me
+                for child in node._nextNodes:
+                    child._parentNodes.remove(node)
                 self._codeBlocks.append(self._newBlockIns)
+                nodeNumber+= 1
                 continue
 
             # Generate the Next-Use-Live for `blockIns`.
@@ -127,7 +131,7 @@ class CodeGen():
                 elif tac.type == InstrType.params:
                     # handle the parameters
                     # push them onto the stack
-                    self.handleParams(tac, nextUse)
+                    jumpIns += self.handleParams(tac, nextUse)
                     
                 else:
                     print "code:142:: Unhandled instruction at "+tac.lineNumber
@@ -315,8 +319,8 @@ class CodeGen():
             if tac.type == InstrType.call:
                 jumpIns.append("jal "+tac.target)
             else:
-                insrts.append("jal "+LibFns[tac.target])
-                insrts.append("addi  $sp, 4")
+                jumpIns.append("jal "+LibFns[tac.target])
+                jumpIns.append("addi  $sp, 4")
                 
             # insrts.append("lw $ra, 0($sp)")
             # insrts.append("addi $sp, 4")
@@ -329,10 +333,11 @@ class CodeGen():
                 self._regAlloc.removeFromFree(allocatedR) 
                 self.storeSpilled(allocatedR) 
                 jumpIns.append("move "+ allocatedR + ", $v0")
-                if dest["offset"] == -1:
-                    jumpIns.append("sw "+ allocatedR + ", g_"+dest["place"].replace("$","_",1))
-                else:
-                    jumpIns.append("sw "+ allocatedR + ", "+str(dest["offset"])+"($sp)")
+                # if there were arguments passed to it
+                # restore the stack by poping them off the stack
+                if tac.src1["place"] != 0:
+                    jumpIns.append("addi  $sp, "+ str(4*tac.src1["place"]))
+                jumpIns.append(self.genStore(dest, allocatedR))
 
                 # allocatedR = "$v0"
                 # update the discriptor of destination and allocated R
@@ -350,6 +355,7 @@ class CodeGen():
 
 
     def handleParams(self, tac, nextUse):
+        jumpIns = []
         src = tac.src
         allocatedR = self._regAlloc.getReg(src, tac, nextUse, {})
         self._regAlloc.removeFromFree(allocatedR)     # remove from free list
@@ -358,8 +364,10 @@ class CodeGen():
         # get it from memory and store in the register
         self.lwInR(src, allocatedR)
         # if allocatedR != "$v0":
-        self._newBlockIns.append("addi $sp, -"+str(src["width"]))
-        self._newBlockIns.append("sw "+allocatedR+", 0($sp)" )
+        jumpIns.append("addi $sp, -"+str(src["width"]))
+        jumpIns.append("sw "+allocatedR+", 0($sp)" )
+
+        return jumpIns
 
     # Handle return type of instructions
     def handleReturns(self, tac, nextUse):
@@ -433,11 +441,7 @@ class CodeGen():
                 if rX:
                     # Issue `store x, R_x` Instruction.
                     # genereatedIns.append(Translator.store(x,rX))
-                    if x["offset"] == -1:
-                        self._newBlockIns.append("sw "+str(rX)+", g_"+str(x["place"]).replace("$", "_", 1))
-                    else:
-                        self._newBlockIns.append("sw "+str(rX)+", "+str(x["offset"])+"($sp)")
-
+                    self._newBlockIns.append(self.genStore(x, rX))
                     # Change the Addr_Des[x] to include it's own memory `x`.
                     self._addrDis.setR(x, x["place"])
 
@@ -466,10 +470,7 @@ class CodeGen():
             # create the added stores for the selected register
             for var in self._regDis.fetchVar(allocatedR):
                 # self._newBlockIns.append(Translator.store(var, allocatedR))
-                if var["offset"] == -1:
-                    self._newBlockIns.append("sw "+str(allocatedR)+", g_"+str(var["place"]).replace("$", "_", 1))
-                else:
-                    self._newBlockIns.append("sw "+str(allocatedR)+", "+str(var["offset"])+"($sp)")
+                self._newBlockIns.append(self.genStore(var, allocatedR))
 
                 # update the address discriptor for these variables, add there own location
                 self._addrDis.setR(var, var["place"])
@@ -492,10 +493,7 @@ class CodeGen():
         if not src in self._regDis.fetchVar(rSrc):
             # Issue `load R_src, src` Instruction.
             # self._newBlockIns.append(Translator.load(allocatedRs[src], src))
-            if src["offset"] == -1:
-                self._newBlockIns.append("lw "+str(rSrc)+", g_"+str(src["place"]).replace("$", "_", 1))
-            else:
-                self._newBlockIns.append("lw "+str(rSrc)+", "+str(src["offset"])+"($sp)")
+            self._newBlockIns.append(self.genLoad(src, rSrc))
 
             # Change the Reg_Des[R_src] so it holds only `src`.
             self._regDis.setVar(rSrc, src)
@@ -518,6 +516,30 @@ class CodeGen():
         # Remove the dest from resiters other than rDest if there is anyone who contains the value 
         # of dest
         self._regDis.removeVarOtherThen(dest, rDest)
+
+    # Generate a store instruction for variable var in register reg and return it
+    def genStore(self, var, reg):
+        storeIns = ""
+        if var["scope"] == "global":
+            storeIns = "sw "+ reg + ", g_"+var["place"].replace("$","_",1)
+        elif var["scope"] == "local":
+            storeIns =  "sw "+ reg + ", "+str(var["offset"])+"($sp)"
+        else:
+            storeIns =  "sw "+ reg + ", "+str(8+var["offset"])+"($fp)"
+
+        return storeIns
+
+    # Generata a load instruction for variable var in register reg and return it
+    def genLoad(self, var, reg):
+        loadIns = ""
+        if var["scope"] == "global":
+            loadIns = "lw "+reg+", g_"+str(var["place"]).replace("$", "_", 1)
+        elif var["scope"] == "local":
+            loadIns = "lw "+ reg + ", "+str(var["offset"])+"($sp)"
+        else:
+            loadIns =  "lw "+ reg + ", "+str(8+var["offset"])+"($fp)"
+
+        return loadIns
 
 if __name__ == '__main__':
     fileName = "./../test/test1.ir"
