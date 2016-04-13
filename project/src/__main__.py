@@ -19,7 +19,8 @@ if __name__ == '__main__':
     result = runIR()
     errors = result["errors"]
     if len(errors) != 0:
-        print errors
+        for error in errors:
+            print error
         exit()
     ir = result["ir"]
     # ir.printTac()

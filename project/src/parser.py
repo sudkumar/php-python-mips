@@ -618,9 +618,12 @@ def p_func_call(p):
     global ir
     name = p[1]
     attrs = stm.lookupInRoot(name)
+
     if(not attrs):
         errors.append("NameError: at line number "+ str(p.lexer.lineno)+", function "+name +" is not defined.")
     else:
+        if(attrs["numParams"] != p[3]["numParams"]):
+            errors.append("Error: at line number "+ str(p.lexer.lineno)+", function "+name +" takes exactly " + str(attrs["numParams"]) + " parameters , but " + str(p[3]["numParams"]) + " parameters given.")
         tmp = ir.newTemp()
         p[0] =  stm.insert(tmp, "int", 4)
         ir.emitCall(attrs["lineNumber"], p[3]["numParams"],p[0])

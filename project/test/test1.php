@@ -32,7 +32,7 @@
     }
     function foo(){
         $d = 3;
-        return sum();
+        return sum($a , $b);
     }
     $f = sum();
     $e = foo();
