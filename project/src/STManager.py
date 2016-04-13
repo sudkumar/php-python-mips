@@ -36,23 +36,16 @@ class STManager():
         @return {bool} -- symbol found or not
     """
     def lookup(self, _symbol):
-        # get the number of active symbol tables
-        countActiveRecords = len(self.activeSTs)
-        # search for symbol in activation records in reverse order ( with most closely nested rule )
-        while(countActiveRecords > 0):
-            # search for symbol in a symbol table
-            attrs = self.activeSTs[countActiveRecords-1].search(_symbol)
-            # if symbol found, return the attribute for the symbol
-            if attrs:
-                return attrs
-            # else loop in most closely nested symbol table
-            countActiveRecords -= 1
+        return self.currActive.search(_symbol)
 
 
-        # symbol not found, return None
-        return None
-
-
+    """ Lookup In Root for a symbol. Used to lookup for globals and functions 
+        Loopup for the symbol in the activation record
+        @params _symbol {string} -- symbol for which look to be done
+        @return {bool} -- symbol found or not
+    """
+    def lookupInRoot(self, _symbol):
+        return self.root.search(_symbol)
 
     """ Push
         push symbol table onto symbol tables stack
@@ -77,9 +70,15 @@ class STManager():
         @params _type {string} -- type of name (an attribute)
         @params _offset {integer} -- size | offset for the name
     """
-    def insert(self, _name, _type, _offset):
-        self.currActive.insert(_name, _type, _offset)
+    def insert(self, _name, _type, _width):
+        return self.currActive.insert(_name, _type, _width)
 
+
+    """ Add link to global variable into the current active symbol table
+        
+    """
+    def linkGlobalSym(self, _name, _attrs):
+        self.currActive.linkGlobalSym(_name, _attrs)
 
     """ Enter a new entry for a procedure
         Create a new entry for a procedure.
@@ -93,7 +92,7 @@ class STManager():
             "numParams": _numParams,
             "st": _procST
         }
-        self.currActive.enterProc(_name, _lineNumber, _numParams, _procST)
+        return self.currActive.enterProc(_name, _lineNumber, _numParams, _procST)
 
 
     """ Set attribute

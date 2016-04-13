@@ -7,6 +7,6 @@ all:
 	mkdir bin
 	mv ./irgen ./bin
 	rm ./irgen.zip
-	./bin/irgen ./test/test1.php > out.txt
+	./bin/irgen ./test/test1.php > out.s
 clean:
 	rm -rf ./bin

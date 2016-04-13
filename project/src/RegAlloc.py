@@ -59,6 +59,10 @@ class RegAlloc():
             dest = tac.dest
             srcs = tac.srcs
 
+        # have to repeat this as this function is getting
+        if len(self._freeRs) != 0:
+            return self._freeRs[0]
+
         # get the current rs and make sure that we don't give the current var, one of these registers        
         rs = []
         for x in notRs.keys():
@@ -69,6 +73,8 @@ class RegAlloc():
                 continue
             # for all locations that this register stores
             scores[reg] = 0
+
+            
             for var in self._regDis.fetchVar(reg):
                 # if Addr_Des[v] contains other locations for it's value, then "OK". 
                 if len(self._addrDis.fetchR(var)) > 1 and len(self._regDis.fetchVar(reg)) == 1:

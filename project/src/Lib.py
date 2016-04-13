@@ -22,6 +22,7 @@ class Lib():
     # print the content of $a0
     def printInt(self):
         instr = []
+        instr.append("lw $a0, 0($sp)")
         instr.append("li $v0, 1")
         instr.append("syscall")
         instr.append("jr $ra")

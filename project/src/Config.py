@@ -64,11 +64,12 @@ LibFns = {
 JumpInstructions = [InstrType.ujump, InstrType.cjump, InstrType.call, InstrType.ret]      
 
 # Available register
-TempRegs = ["$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"]
-SavedRegs = ["$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7"]
-AvalRegs = ["$t0", "$t1", "$t2", "$t3"]
-# AvalRegs = TempRegs + SavedRegs
-ArgRegs = ["$a0", "$a1", "$a2", "$a3"]
+TempRegs = ["$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25"]
+SavedRegs = ["$16", "$17", "$18", "$19", "$20", "$21", "$22", "$23"]
+ArgRegs = ["$4", "$5", "$6", "$7"]
+
+AvalRegs = TempRegs + SavedRegs + ArgRegs
+
 RetRegs = ["$v0", "$v1"]
 
 OperatorMap = {

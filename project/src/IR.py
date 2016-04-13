@@ -69,16 +69,17 @@ class IR():
 
     def emitEcho(self):
         tac = TAC(InstrType.libFn, "echo")
-        self.addTac(tac, "echo")
+        tac.target = "printInt"
+        self.addTac(tac, "printInt")
 
     def emitParams(self, _src):
         tac = TAC(InstrType.params, "params")
-        tac.src =_src
+        tac.src1 =_src
         self.addTac( tac,  "params "+str(_src["place"]))
 
     def emitRet(self, _src=None):
         tac = TAC(InstrType.ret, "ret")
-        tac.src =_src
+        tac.src1 =_src
 
         # make the _src a string (for printing purpose only)
         _src = _src if _src != None else {"place": ""}

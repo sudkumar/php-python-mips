@@ -50,6 +50,11 @@ class SymbolTable():
         # update the width of the symbol table by adding the width of the current symbol
         self.addWidth(_width)
 
+        return attrs
+
+
+    def linkGlobalSym(self, _name, _attrs):
+        self.symbols[_name] = _attrs
 
 
     """ Enter a new entry for a procedure
@@ -70,6 +75,8 @@ class SymbolTable():
 
         # attach the attributes for the name in the symbol table
         self.symbols[_name] = attrs
+
+        return attrs
 
 
 
@@ -106,7 +113,9 @@ class SymbolTable():
         # check of we added the any width
         if _key == "width":
             # update the offset of that symbol
-            self.symbols[_symbol]["offset"] = self.width
+            if self.symbols[_symbol]["scope"] != "global":
+                self.symbols[_symbol]["offset"] = self.width
+            
             # update the width of the current symbol table
             self.addWidth(_val)
 

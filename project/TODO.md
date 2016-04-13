@@ -1,6 +1,5 @@
 ## TODO
 - func_call with params
-- add memory management
 
 ## DONE
 - copy codegen
@@ -12,3 +11,5 @@
 - func_call without params
 - func_call with return val
 - offset in ST
+- add memory management
+- echo with int added

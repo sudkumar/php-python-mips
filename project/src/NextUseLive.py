@@ -96,7 +96,6 @@ def NextUseLive(bbNode):
         elif tac.type == InstrType.params:
             funcCallAt = currLine + 1
             while tac.type == InstrType.params:
-                attrs = st.getAttrs(tac.src)
                 if "const_" not in tac.src["type"]:
                     symbolTable[currLine][tac.src["place"]] = [1,funcCallAt+1]
                 currLine -= 1 
