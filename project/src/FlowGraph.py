@@ -79,8 +79,11 @@ class FlowGraph():
                 continue    
 
             # get the last instruction
-            ltac = nodes[i]._block[-1]
-
+            print nodes[i]._block
+            if len(nodes[i]._block) > 0:
+                ltac = nodes[i]._block[-1]
+            else:
+                continue
             if ltac.type in JumpInstructions:
                 if ltac.type == InstrType.ret:
                     continue
