@@ -66,18 +66,20 @@ t31 = $d + t30
 $e = t31
 t32 = $d * $e
 $f = t32
-goto 73
-t33 = 222
-t34 = $d + t33
-$c = t34
+goto 72
+t33 = 11111
+$c = t33
 ret $c
-goto 76
-t35 = 11113
-$d = t35
-call 74 0 t36
-$e = t36
-params $e
-printInt
+goto 80
+t34 = 11113
+$d = t34
+t35 = 1
+$d = $d + t35
+call 73 0 t36
+$d = t36
+ret $d
+call 69 0 t37
+$f = t37
 	.text
 	.globl main
 
@@ -197,35 +199,47 @@ B19:
 	sw $19, g__c
 	j B20
 B20:
-	li $21, 222
-	lw $20, g__d
-	add $22, $20, $21
-	sw $21, 0($sp)
-	sw $22, 4($sp)
-	sw $22, 8($sp)
-	move $v0, $22
+	li $21, 10
+	li $20, 1
+	add $22, $21, $20
+	mul $4, $21, $22
+	sw $21, g_t29
+	sw $21, g__d
+	sw $20, g_t30
+	sw $22, g_t31
+	sw $22, g__e
+	sw $4, g_t32
+	sw $4, g__f
+	j B24
+B21:
+	li $23, 11111
+	sw $23, 0($sp)
+	sw $23, 4($sp)
+	move $v0, $23
 	move $sp, $fp
 	lw $ra, 0($sp)
 	lw $fp, 4($sp)
 	addi $sp, $sp, 8
 	jr $ra
-B21:
-	j B26
 B22:
-	li $4, 11113
-	sw $4, 0($sp)
-	sw $4, 4($sp)
+	j B27
 B23:
-	jal B25
-	move $23, $v0
-	sw $23, g_t36
+	addi $sp, -8
+	sw $ra, 0($sp)
+	sw $fp, 4($sp)
+	move $fp, $sp
+	addi $sp, -8
+	lw $5, 12($sp)
+	sw $5, 4($sp)
+	move $v0, $5
+	move $sp, $fp
+	lw $ra, 0($sp)
+	lw $fp, 4($sp)
+	addi $sp, $sp, 8
+	jr $ra
 B24:
-	lw $5, g_t36
-	addi $sp, -4
-	sw $5, 0($sp)
-	jal _printInt_
-	addi  $sp, 4
-	sw $5, g__e
+	lw $6, g_t37
+	sw $6, g__f
 	j _exit_
 _readInt_:
 	li $v0, 5
@@ -279,7 +293,7 @@ g_t10:	.space	4
 g_t11:	.space	4
 g_t12:	.space	4
 g_t13:	.space	4
-g_t36:	.space	4
+g_t37:	.space	4
 g_t18:	.space	4
 g_t19:	.space	4
 g_t30:	.space	4

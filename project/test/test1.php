@@ -27,14 +27,17 @@
     $f = $d * $e;
     function sum(){
         global $d;
-        $c = $d + 222;
+        $c = 11111;
+
         return $c;
     }
     function foo(){
         $d = 11113;
-        // return sum();
+        $d += 1;
+        $d = foo();
+        return $d;
     }
-    // $f = sum();
-    $e = foo();
-    echo $e;
+    $f = sum();
+    // $e = foo();
+    // echo $e;
  ?>
