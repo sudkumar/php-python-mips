@@ -111,8 +111,10 @@ class IR():
     def backpatch(self, _list, _i):
         for lineNumber in _list:
             self.tac[lineNumber].target = _i
-            self.strTac[lineNumber] = self.strTac[lineNumber] + str(_i)
-
+            if(self.tac[lineNumber].type != InstrType.call):            
+                self.strTac[lineNumber] = self.strTac[lineNumber] + str(_i)
+            else:
+                self.strTac[lineNumber] = "call "+ str(_i) + " "+str(self.tac[lineNumber].src1["place"]) + " " + str(self.tac[lineNumber].dest["place"])
     # return a new temporary
     def newTemp(self):
         self.temp += 1

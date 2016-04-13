@@ -38,6 +38,7 @@ precedence = (
 
 
 errors = []
+fns = {}
 
 def p_start(p):
     'start : start_marker stmt_list'
@@ -90,6 +91,10 @@ def p_func_decl(p):
     # remove the function table
     procST = stm.pop()
     stm.enterProc(p[3], p[6]["quad"], p[7]["numParams"], procST)
+
+    if p[3] in fns.keys():
+        ir.backpatch(fns[p[3]], p[6]["quad"])
+        del fns[p[3]]
 
 def p_func_table_marker(p):
     'func_table_marker : empty'
@@ -617,15 +622,24 @@ def p_func_call(p):
     global stm
     global ir
     name = p[1]
+    tmp = ir.newTemp()
+    p[0] =  stm.insert(tmp, "int", 4)
     attrs = stm.lookupInRoot(name)
-
+# func key 
     if(not attrs):
-        errors.append("NameError: at line number "+ str(p.lexer.lineno)+", function "+name +" is not defined.")
+        # print 'fn not found'
+        if p[1] in fns.keys():
+            # some else is also waiting
+            fns[p[1]] = ir.mergeList(fns[p[1]], ir.makeList(ir.nextquad))
+        else:
+            # this is the first one who is waiting
+            fns[p[1]] =  ir.makeList(ir.nextquad)
+        ir.emitCall(None, p[3]["numParams"],p[0])
+            
+        # errors.append("NameError: at line number "+ str(p.lexer.lineno)+", function "+name +" is not defined.")
     else:
         if(attrs["numParams"] != p[3]["numParams"]):
             errors.append("Error: at line number "+ str(p.lexer.lineno)+", function "+name +" takes exactly " + str(attrs["numParams"]) + " parameters , but " + str(p[3]["numParams"]) + " parameters given.")
-        tmp = ir.newTemp()
-        p[0] =  stm.insert(tmp, "int", 4)
         ir.emitCall(attrs["lineNumber"], p[3]["numParams"],p[0])
 
 def p_func_params(p):
@@ -1093,10 +1107,10 @@ def runIR():
 
     log = logging.getLogger()
 
-
     result = parser.parse(data,debug=0)
+    for k in fns.keys():
+        errors.append("NameError: call to undefined function " + k )
     result["errors"] = errors
-
     # result = parser.parse(data,debug=log)
     return result
 
