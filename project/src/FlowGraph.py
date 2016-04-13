@@ -77,7 +77,7 @@ class FlowGraph():
                 nodes[0].addSucc(nodes[1])
                 continue    
 
-            # get the last instruction
+            # get the last instruction if there is any
             if len(nodes[i]._block) > 0:
                 ltac = nodes[i]._block[-1]
             else:

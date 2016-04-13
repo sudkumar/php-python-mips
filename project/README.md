@@ -1,9 +1,40 @@
-# A simple ir generator from src code.
+# PHP-PYTHON-MIPS Compiler Design
+
+## Team Members
+- Aman Kumar (12085)
+- Rohit Anurag (12585)
+- Sahil Solanki (11624)
+- Sudhir Kumar (12734)
+
+## Key Features
+- for variable Integer type assumed 
+- basic Arithmetic operations
+- Increment, Decrement of a variable 
+- two types of if-else stmt
+- switch-case stmt
+- for loop
+- while loop
+- function call without parameter
+- recursion call
+- break
+- return
+- continue
+- library print integer support
+- dead code elimination
+- type checking
 
 ## File Structure
 - src
+    - AddrDist: Address descriptor file.
+    - BBGen: Basic block generation from given three address code.
+    - Codegen: Generate Instructions from the IR, responsible for creating the Register and Address Descriptor for all available register and variables.
     - Config: Configuration file for operators, registers and Instr types.
+    - FlowGraph: From the IR create nodes for each basic blocks.
     - IR: IR generation handler.
+    - Lib: Library function handler.
+    - NextUseLive: Finds next use and liveness for each statement in given basic block.
+    - RegAlloc: Handles register allocation.
+    - RegDis: Register descriptor file.
     - STManager: Symbol Tables Manager
     - SymbolTable: Symbol Table
     - TAC: In memory representation of 3 address code.
@@ -11,42 +42,27 @@
     - parser: parser file
     - __main__: program start here.
 
-- features
-    - declarations of vars and functions.
-    - conditional if, if-else, if-elseif.
-    - ternary operator.
-    - switch case statement.
-    - for loop.
-    - while, do-while.
-    - break, continue.
-    - function call with params and return value.
-    - ECHO supports.
-    - pre-Increment and pre-Decrement. 
-    - error handling for undefined decls and types.
-
 - test
 
-Test cases contaning Intermediate 3AC.
+    Test cases containing php src code.
 
-      
-    - test1.php          // function call and ternary
-    - test2.php          // switch stmt
-    - test3.php          // for loop
-    - test4.php          // both kind of if-else stmt 
-    - test5.php          // while stmt
-     
 
 - makefile
     - to wrap all things together.
 
 ## Running Test cases
 
-   in asgn4 folder run these command to make executable irgen in bin folder-
+   in project folder run these command to make assembly code which goes in out.s file-
 
     make clean
     make
 
-   test cases can be run with this command:
 
-    ./bin/irgen ./test/test1.php
+    
+## Execute Assembly Code
 
+   run these command in terminal one by one
+
+    $ spim
+    $ load "out.s"
+    $ run
