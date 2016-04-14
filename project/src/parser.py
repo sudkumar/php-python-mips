@@ -534,7 +534,10 @@ def p_stmt_echo(p):
     'stmt : ECHO echo_expr_list SEMICOLON'
     # p[0] = {"stmt":[p[1],p[2],p[3]]}
     global ir
-    ir.emitEcho()
+    if p[2]["type"] == "int":
+        ir.emitPrintInt()
+    else:
+        ir.emitPrintStr()
     p[0] = p[2]
 def p_echo_expr_list(p):
     '''echo_expr_list : echo_expr_list COMMA expr

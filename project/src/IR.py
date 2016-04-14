@@ -67,10 +67,15 @@ class IR():
         _returnVal = _returnVal if _returnVal != None else {"place": ""}
         self.addTac(tac, "call "+ str(_target) + " "+str(_nParams) + " " + str(_returnVal["place"]))
 
-    def emitEcho(self):
-        tac = TAC(InstrType.libFn, "echo")
+    def emitPrintInt(self):
+        tac = TAC(InstrType.libFn, "printInt")
         tac.target = "printInt"
         self.addTac(tac, "printInt")
+    
+    def emitPrintStr(self):
+        tac = TAC(InstrType.libFn, "printStr")
+        tac.target = "printStr"
+        self.addTac(tac, "printStr")
 
     def emitParams(self, _src):
         tac = TAC(InstrType.params, "params")
