@@ -1,6 +1,6 @@
 <?php
     $y = 10;
-    
+    exit;    
     switch ($y) {
         case 1 :
             $y = 1;

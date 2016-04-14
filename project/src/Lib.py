@@ -31,6 +31,7 @@ class Lib():
     # print the string at address $a0
     def printStr(self):
         instr = []
+        instr.append("lw $a0, 0($sp)")
         instr.append("li $v0, 4")
         instr.append("syscall")
         instr.append("jr $ra")

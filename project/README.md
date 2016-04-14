@@ -6,22 +6,6 @@
 - Sahil Solanki (11624)
 - Sudhir Kumar (12734)
 
-## Key Features
-- for variable Integer type assumed 
-- basic Arithmetic operations
-- Increment, Decrement of a variable 
-- two types of if-else stmt
-- switch-case stmt
-- for loop
-- while loop
-- function call without parameter
-- recursion call
-- break
-- return
-- continue
-- library print integer support
-- dead code elimination
-- type checking
 
 ## File Structure
 - src
@@ -41,6 +25,24 @@
     - lexer: lexer file
     - parser: parser file
     - __main__: program start here.
+
+## features
+    - declarations of vars and functions.
+    - conditional if, if-else, if-elseif.
+    - ternary operator.
+    - switch case statement.
+    - for loop.
+    - while, do-while.
+    - break, continue.
+    - function call with params and return value.
+    - function call without a return statement
+    - echo supports.
+    - pre-Increment and pre-Decrement. 
+    - error handling for undefined decls and types.
+    - error handling for function params count and undefined functions.
+    - exit 
+    - dead code elimination
+    - print newline support
 
 - test
 

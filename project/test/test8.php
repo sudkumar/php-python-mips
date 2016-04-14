@@ -1,6 +1,6 @@
 <?php
 
-$n = 5;
+$n = 7;
 function Fibonacci($n)
 {
    if ( $n == 0 ){

@@ -27,6 +27,8 @@ class CodeGen():
         blockNodes = flowGraph._blockNodes
         countNodes = len(blockNodes)
 
+        # To hold the constant string with there key name
+        self._strs = {}
 
         self._st = stm
 
@@ -63,8 +65,8 @@ class CodeGen():
             # Some dead code elimination if a node don't have link to it's parents
             if(len(node._parentNodes)==0):
                 # remove me from my children's parent as they also won't be accessible by me
-                for child in node._nextNodes:
-                    child._parentNodes.remove(node)
+                # for child in node._nextNodes:
+                #     child._parentNodes.remove(node)
                 self._codeBlocks.append(self._newBlockIns)
                 nodeNumber+= 1
                 continue
@@ -262,8 +264,8 @@ class CodeGen():
         dest = tac.dest
         src = tac.src  
         # Get Registers for all operands (using GetReg(Ins) method). Say R_dest = R_src. 
-        srcInt = True if "const_" in src["type"] else False
-        if not srcInt:
+        srcConst = True if "const_" in src["type"] else False
+        if not srcConst:
             # pick the R_src as above.
             rSrc = self._regAlloc.getReg(src, tac, nextUse, {})
             self.storeSpilled(rSrc)
@@ -281,10 +283,16 @@ class CodeGen():
             rDest = self._regAlloc.getReg(dest, tac, nextUse, {})
             self.storeSpilled(rDest)
             self._regAlloc.removeFromFree(rDest)
-            # Now generate the li instruction
-            self.genLiInstr(rDest, src)
+            if src["type"] == "const_int":
+                # Now generate the li instruction
+                self.genLiInstr(rDest, src)
+            elif src["type"] == "const_string":
+                # Generat ethe la instruction
+                strKey = src["place"].encode("hex")
+                self._strs[str(strKey)] = src["place"]
+                self._newBlockIns.append("la "+ str(rDest) + ", "+ "str_"+strKey)
 
-        if not srcInt:
+        if not srcConst:
             # Adjust the Reg_Des[R_src] to include `dest`.
             self._regDis.appendVar(rSrc, dest)
 
@@ -374,18 +382,19 @@ class CodeGen():
         jumpIns = []
         # get the value to return
         src = tac.src
-        if "const_" in src["type"]:
-            jumpIns.append("li $v0, "+src["place"])
-        else:     
-            allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
-            self._regAlloc.removeFromFree(allocatedR)     # remove from free list
+        if src:
+            if "const_" in src["type"]:
+                jumpIns.append("li $v0, "+src["place"])
+            else:     
+                allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
+                self._regAlloc.removeFromFree(allocatedR)     # remove from free list
 
-            # If src=Ins.srcOperand is not in 'Register':
-            # get it from memory and store in the register
-            self.lwInR(src, allocatedR)
+                # If src=Ins.srcOperand is not in 'Register':
+                # get it from memory and store in the register
+                self.lwInR(src, allocatedR)
 
-            # if allocatedR != "$v0":
-            jumpIns.append("move $v0, "+allocatedR)
+                # if allocatedR != "$v0":
+                jumpIns.append("move $v0, "+allocatedR)
 
         # add the load for return value
         jumpIns.append("move $sp, $fp")
@@ -485,7 +494,6 @@ class CodeGen():
         self._regAlloc.removeFromFree(reg)        # remove the register from free list
         # get the value of constant
         self._newBlockIns.append("li "+str(reg)+", "+str(val["place"]))
-
 
     # Load from memory and store in a register
     def lwInR(self, src, rSrc):
