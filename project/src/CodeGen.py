@@ -84,6 +84,7 @@ class CodeGen():
             #- For each Instruction `Ins` in `blockIns`:
             i = 0
             jumpIns = []
+            paramIns = []
             countBlock = len(blockIns)
             nodeNumber+= 1
             if nodeNumber in self._fns.keys():
@@ -118,6 +119,8 @@ class CodeGen():
 
                 # else if `Ins` is of type "func_call"    
                 elif tac.type == InstrType.call or tac.type == InstrType.libFn:
+                    paramIns.reverse()
+                    jumpIns += paramIns
                     jumpIns += self.handleFnsCalls(tac, nextUse)
 
                 # else if `Ins` is of type "func_label"
@@ -133,7 +136,7 @@ class CodeGen():
                 elif tac.type == InstrType.params:
                     # handle the parameters
                     # push them onto the stack
-                    jumpIns += self.handleParams(tac, nextUse)
+                    paramIns += self.handleParams(tac, nextUse)
                     
                 else:
                     print "code:142:: Unhandled instruction at "+tac.lineNumber
@@ -372,8 +375,8 @@ class CodeGen():
         # get it from memory and store in the register
         self.lwInR(src, allocatedR)
         # if allocatedR != "$v0":
-        jumpIns.append("addi $sp, -"+str(src["width"]))
         jumpIns.append("sw "+allocatedR+", 0($sp)" )
+        jumpIns.append("addi $sp, -"+str(src["width"]))
 
         return jumpIns
 

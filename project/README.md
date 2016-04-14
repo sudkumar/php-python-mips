@@ -26,6 +26,7 @@
     - parser: parser file
     - __main__: program start here.
 
+
 ## features
     - declarations of vars and functions.
     - conditional if, if-else, if-elseif.
@@ -44,12 +45,12 @@
     - dead code elimination
     - print newline support
 
-- test
 
+# test
     Test cases containing php src code.
 
 
-- makefile
+# makefile
     - to wrap all things together.
 
 ## Running Test cases
