@@ -65,8 +65,8 @@ class CodeGen():
             # Some dead code elimination if a node don't have link to it's parents
             if(len(node._parentNodes)==0):
                 # remove me from my children's parent as they also won't be accessible by me
-                for child in node._nextNodes:
-                    child._parentNodes.remove(node)
+                # for child in node._nextNodes:
+                #     child._parentNodes.remove(node)
                 self._codeBlocks.append(self._newBlockIns)
                 nodeNumber+= 1
                 continue
