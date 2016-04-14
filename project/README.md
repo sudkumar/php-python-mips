@@ -20,9 +20,14 @@
     - while, do-while.
     - break, continue.
     - function call with params and return value.
-    - ECHO supports.
+    - function call without a return statement
+    - echo supports.
     - pre-Increment and pre-Decrement. 
     - error handling for undefined decls and types.
+    - error handling for function params count and undefined functions.
+    - exit 
+    - dead code elimination
+    - print newline support
 
 - test
 
