@@ -382,18 +382,19 @@ class CodeGen():
         jumpIns = []
         # get the value to return
         src = tac.src
-        if "const_" in src["type"]:
-            jumpIns.append("li $v0, "+src["place"])
-        else:     
-            allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
-            self._regAlloc.removeFromFree(allocatedR)     # remove from free list
+        if src:
+            if "const_" in src["type"]:
+                jumpIns.append("li $v0, "+src["place"])
+            else:     
+                allocatedR = self._regAlloc.getReg(tac.src, tac, nextUse, {})
+                self._regAlloc.removeFromFree(allocatedR)     # remove from free list
 
-            # If src=Ins.srcOperand is not in 'Register':
-            # get it from memory and store in the register
-            self.lwInR(src, allocatedR)
+                # If src=Ins.srcOperand is not in 'Register':
+                # get it from memory and store in the register
+                self.lwInR(src, allocatedR)
 
-            # if allocatedR != "$v0":
-            jumpIns.append("move $v0, "+allocatedR)
+                # if allocatedR != "$v0":
+                jumpIns.append("move $v0, "+allocatedR)
 
         # add the load for return value
         jumpIns.append("move $sp, $fp")

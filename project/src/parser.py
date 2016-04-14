@@ -87,7 +87,7 @@ def p_func_decl(p):
     global stm
     p[0] = {}
     # put the start goto to skip the function defination
-    ir.backpatch(p[2]["nextlist"], p[12]["quad"])
+    ir.backpatch(p[2]["nextlist"], p[12]["quad"]+1)
     # remove the function table
     procST = stm.pop()
     stm.enterProc(p[3], p[6]["quad"], p[7]["numParams"], procST)
@@ -95,6 +95,9 @@ def p_func_decl(p):
     if p[3] in fns.keys():
         ir.backpatch(fns[p[3]], p[6]["quad"])
         del fns[p[3]]
+
+    # now do a fake return
+    ir.emitRet()
 
 def p_func_table_marker(p):
     'func_table_marker : empty'

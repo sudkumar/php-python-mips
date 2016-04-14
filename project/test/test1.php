@@ -42,5 +42,7 @@
     $f = 10;
     $f = sum($f, $e);
     echo $f;
+    $g = "\n\n";
+    echo $g;
     exit;
  ?>

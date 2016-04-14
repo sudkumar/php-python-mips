@@ -98,7 +98,7 @@ class IR():
 
     def addTac(self, _tac, _line):
         self.tac.append(_tac)
-        self.strTac.append(_line)
+        self.strTac.append(str(self.nextquad)+": "+_line)
         self.nextquad += 1
 
 
@@ -123,7 +123,7 @@ class IR():
             if(self.tac[lineNumber].type != InstrType.call):            
                 self.strTac[lineNumber] = self.strTac[lineNumber] + str(_i)
             else:
-                self.strTac[lineNumber] = "call "+ str(_i) + " "+str(self.tac[lineNumber].src1["place"]) + " " + str(self.tac[lineNumber].dest["place"])
+                self.strTac[lineNumber] = str(self.strTac[lineNumber].split(":")[0])+": call "+ str(_i) + " "+str(self.tac[lineNumber].src1["place"]) + " " + str(self.tac[lineNumber].dest["place"])
     # return a new temporary
     def newTemp(self):
         self.temp += 1

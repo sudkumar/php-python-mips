@@ -16,6 +16,8 @@ function power($a, $n)
         $x = power($a, $n);
     	return $a * $x; 
     }
+    $x = 10;
+    return;
 }
 $p = power($a, $n);
 echo $p;
