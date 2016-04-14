@@ -67,10 +67,15 @@ class IR():
         _returnVal = _returnVal if _returnVal != None else {"place": ""}
         self.addTac(tac, "call "+ str(_target) + " "+str(_nParams) + " " + str(_returnVal["place"]))
 
-    def emitEcho(self):
-        tac = TAC(InstrType.libFn, "echo")
+    def emitPrintInt(self):
+        tac = TAC(InstrType.libFn, "printInt")
         tac.target = "printInt"
         self.addTac(tac, "printInt")
+    
+    def emitPrintStr(self):
+        tac = TAC(InstrType.libFn, "printStr")
+        tac.target = "printStr"
+        self.addTac(tac, "printStr")
 
     def emitParams(self, _src):
         tac = TAC(InstrType.params, "params")
@@ -86,10 +91,14 @@ class IR():
         self.addTac( tac,  "ret "+str(_src["place"]))
 
 
+    def emitExit(self):
+        tac = TAC(InstrType.libFn, "exit")
+        tac.target = "exit"
+        self.addTac(tac, "exit")
 
     def addTac(self, _tac, _line):
         self.tac.append(_tac)
-        self.strTac.append(_line)
+        self.strTac.append(str(self.nextquad)+": "+_line)
         self.nextquad += 1
 
 
@@ -114,7 +123,7 @@ class IR():
             if(self.tac[lineNumber].type != InstrType.call):            
                 self.strTac[lineNumber] = self.strTac[lineNumber] + str(_i)
             else:
-                self.strTac[lineNumber] = "call "+ str(_i) + " "+str(self.tac[lineNumber].src1["place"]) + " " + str(self.tac[lineNumber].dest["place"])
+                self.strTac[lineNumber] = str(self.strTac[lineNumber].split(":")[0])+": call "+ str(_i) + " "+str(self.tac[lineNumber].src1["place"]) + " " + str(self.tac[lineNumber].dest["place"])
     # return a new temporary
     def newTemp(self):
         self.temp += 1

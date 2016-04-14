@@ -26,6 +26,7 @@ if __name__ == '__main__':
     # ir.printTac()
     stm = result["stm"]
     # printStm(stm.root)
+    # exit()
     code = CodeGen(ir, stm)
     print "\t.text"
     print "\t.globl main\n"
@@ -55,4 +56,6 @@ if __name__ == '__main__':
         if globalSyms[var]["type"] != "proc":
             print "g_"+str(globalSyms[var]["place"]).replace("$", "_", 1) + ":\t.space\t"+ str(globalSyms[var]["width"])
     
-    
+    strs = code._strs
+    for sr in strs.keys():
+        print "str_"+sr+":\t.asciiz\t"+str(strs[sr])

@@ -87,7 +87,7 @@ def p_func_decl(p):
     global stm
     p[0] = {}
     # put the start goto to skip the function defination
-    ir.backpatch(p[2]["nextlist"], p[12]["quad"])
+    ir.backpatch(p[2]["nextlist"], p[12]["quad"]+1)
     # remove the function table
     procST = stm.pop()
     stm.enterProc(p[3], p[6]["quad"], p[7]["numParams"], procST)
@@ -95,6 +95,9 @@ def p_func_decl(p):
     if p[3] in fns.keys():
         ir.backpatch(fns[p[3]], p[6]["quad"])
         del fns[p[3]]
+
+    # now do a fake return
+    ir.emitRet()
 
 def p_func_table_marker(p):
     'func_table_marker : empty'
@@ -124,8 +127,8 @@ def p_param(p):
     global stm
     p[0] ={}
     if(len(p)==2):
-        stm.insert(p[1], None, 0)
-        p[0]["type"] = None
+        stm.insert(p[1], "int", 4, "params")
+        p[0]["type"] = "int"
         p[0]["numParams"] = 1
     elif(len(p)==3):
         p[0] = {"param":[p[1],p[2]]}
@@ -534,7 +537,10 @@ def p_stmt_echo(p):
     'stmt : ECHO echo_expr_list SEMICOLON'
     # p[0] = {"stmt":[p[1],p[2],p[3]]}
     global ir
-    ir.emitEcho()
+    if p[2]["type"] == "int":
+        ir.emitPrintInt()
+    else:
+        ir.emitPrintStr()
     p[0] = p[2]
 def p_echo_expr_list(p):
     '''echo_expr_list : echo_expr_list COMMA expr
@@ -565,7 +571,7 @@ def p_stmt_expr(p):
     p[0] = p[1]
 
 def p_inner_stmts(p):
-    '''inner_stmts : inner_stmts jump_marker inner_stmt
+    '''inner_stmts : inner_stmt jump_marker inner_stmts
                             | empty'''
 
     p[0] = {}
@@ -1063,10 +1069,9 @@ def p_expr_exit(p):
     '''expr : EXIT
           | EXIT LPAREN RPAREN
           | EXIT LPAREN expr RPAREN'''
-    if(len(p)==2):
-        p[0] = p[1]
-    elif(len(p)==4):
-        p[0] = {"expr":[p[1],p[2],p[3]]}
+    global ir
+    if len(p)==2 or len(p) == 4:
+        ir.emitExit()
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
 

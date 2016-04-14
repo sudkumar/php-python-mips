@@ -36,7 +36,6 @@ class FlowGraph():
         # Generate the basic blocks
         bbs = BBGen(tac)
 
-
         # container for all block nodes
         self._blockNodes = []
 
@@ -51,6 +50,11 @@ class FlowGraph():
         # add the links between nodes
         self.addLinks(bbs._leaders)
 
+        # now unlink orphans (which are not reachable from root node)
+        self.unlinkOrphans()
+        # give it another pass
+        self.unlinkOrphans()
+        
 
     def addNodes(self, tac, leaders):
         # add the entry node
@@ -78,30 +82,39 @@ class FlowGraph():
                 nodes[0].addSucc(nodes[1])
                 continue    
 
+<<<<<<< HEAD
             # get the last instruction 
+=======
+            # get the last instruction
+>>>>>>> b566c0127eecb01d1a33f65ec690963e3ad71ff8
             if len(nodes[i]._block) > 0:
                 ltac = nodes[i]._block[-1]
             else:
                 continue
+
             if ltac.type in JumpInstructions:
                 if ltac.type == InstrType.ret:
                     continue
 
-                # it's a jump instruction, so get the target `leader` and add that to my successor  
-                nodes[i].addSucc(nodes[leaders.index(ltac.target)+1])
-                # update the target to point to the successor instead of line number   
-                ltac.updateTarget("B"+str(leaders.index(ltac.target)))
+                if ltac.type != InstrType.libFn:
+                    # it's a jump instruction, so get the target `leader` and add that to my successor  
+                    nodes[i].addSucc(nodes[leaders.index(ltac.target)+1])
+                    # update the target to point to the successor instead of line number   
+                    ltac.updateTarget("B"+str(leaders.index(ltac.target)))
 
                 # check if it a conditional jump instructions
-                if ltac.type == InstrType.cjump or ltac.type == InstrType.call:
-                    # the next `leader` is my successor
-                    if i < countLeaders-1:
-                        nodes[i].addSucc(nodes[i+1])
-                    else:
-                        # print leaders
-                        # it is the last `leader`
+                if ltac.type == InstrType.cjump or ltac.type == InstrType.call or ltac.type == InstrType.libFn:
+                    # if we encouter an exit, let it to go to end, no fall through
+                    if ltac.type == InstrType.libFn and ltac.target == "exit":
                         nodes[i].addSucc(exitNode)
-                
+                    else:
+                        # the next `leader` is my successor
+                        if i < countLeaders-1:
+                            nodes[i].addSucc(nodes[i+1])
+                        else:
+                            # print leaders
+                            # it is the last `leader`
+                            nodes[i].addSucc(exitNode)
 
             # else next `leader` is my successor
             else:
@@ -113,6 +126,21 @@ class FlowGraph():
                     nodes[i].addSucc(exitNode)
 
         self._blockNodes = nodes
+
+    def unlinkOrphans(self):
+        # unlink unreachable node 
+        i  = -1
+        for n in self._blockNodes:
+            # print "B"+str(i)
+            # print "Me: ",n
+            # print "My Parents: ", n._parentNodes
+            # print "My child: ", n._nextNodes
+            if len(n._parentNodes) == 0 and i != -1:
+                # remove me from my children
+                for child in n._nextNodes:
+                    if n in child._parentNodes:
+                        child._parentNodes.remove(n)        
+            i += 1
 
 if __name__ == '__main__':
     ir = IR("sample_input3.ir")

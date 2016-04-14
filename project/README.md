@@ -42,6 +42,27 @@
     - parser: parser file
     - __main__: program start here.
 
+<<<<<<< HEAD
+=======
+- features
+    - declarations of vars and functions.
+    - conditional if, if-else, if-elseif.
+    - ternary operator.
+    - switch case statement.
+    - for loop.
+    - while, do-while.
+    - break, continue.
+    - function call with params and return value.
+    - function call without a return statement
+    - echo supports.
+    - pre-Increment and pre-Decrement. 
+    - error handling for undefined decls and types.
+    - error handling for function params count and undefined functions.
+    - exit 
+    - dead code elimination
+    - print newline support
+
+>>>>>>> b566c0127eecb01d1a33f65ec690963e3ad71ff8
 - test
 
     Test cases containing php src code.

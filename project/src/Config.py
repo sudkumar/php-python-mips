@@ -61,7 +61,7 @@ LibFns = {
 
 }
 
-JumpInstructions = [InstrType.ujump, InstrType.cjump, InstrType.call, InstrType.ret]      
+JumpInstructions = [InstrType.ujump, InstrType.cjump, InstrType.call, InstrType.ret, InstrType.libFn]      
 
 # Available register
 TempRegs = ["$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25"]

@@ -7,7 +7,6 @@
     $a = 112;
     $b = $a + 1;
     $a = $a + 1; 
-
     $a = $b + 1;
     $c = $a > 25 ? $a - 10 : $b + 5;
     if($c == 3 || $c == 9){
@@ -23,21 +22,27 @@
         $c += 1;
     }
     $d = 10;
-    $e = $d + 1;
-    $f = $d * $e;
-    function sum(){
-        global $d;
-        $c = 11111;
-
-        return $c;
+    $e = $d + 100;
+    $f = $d;
+    function sum($c, $e){
+        return $c + $e;
     }
-    function foo(){
-        $d = 11113;
-        $d += 1;
-        $d = foo();
-        return $d;
+    function foo($d){
+        if($d == 0){
+            return 0;
+        }
+        else{
+            $d--;
+            return  $d + foo($d); 
+        }
     }
-    $f = sum();
-    // $e = foo();
-    // echo $e;
+    $d = 10;
+    $e = foo($d);
+    echo $e;
+    $f = 10;
+    $f = sum($f, $e);
+    echo $f;
+    $g = "\n\n";
+    echo $g;
+    exit;
  ?>

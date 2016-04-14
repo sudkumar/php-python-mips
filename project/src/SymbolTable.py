@@ -11,7 +11,8 @@ class SymbolTable():
         # intialize the size (width | offset) of the table
         self.width = 0
 
-
+        # the parameters size for the table
+        self.params = 0
 
 
     """ Insert into symbol table
@@ -30,6 +31,10 @@ class SymbolTable():
         # add the scope to the variable
         if _scope != None:
             attrs["scope"] = _scope
+            if _scope == "params":
+                attrs["offset"] = self.params
+                self.params += _width
+                _width = 0
         else:
             if self.parent != None:
                 # We are not in the root symbol table
