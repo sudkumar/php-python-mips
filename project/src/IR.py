@@ -86,6 +86,10 @@ class IR():
         self.addTac( tac,  "ret "+str(_src["place"]))
 
 
+    def emitExit(self):
+        tac = TAC(InstrType.libFn, "exit")
+        tac.target = "exit"
+        self.addTac(tac, "exit")
 
     def addTac(self, _tac, _line):
         self.tac.append(_tac)

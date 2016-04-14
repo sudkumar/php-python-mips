@@ -1063,10 +1063,9 @@ def p_expr_exit(p):
     '''expr : EXIT
           | EXIT LPAREN RPAREN
           | EXIT LPAREN expr RPAREN'''
-    if(len(p)==2):
-        p[0] = p[1]
-    elif(len(p)==4):
-        p[0] = {"expr":[p[1],p[2],p[3]]}
+    global ir
+    if len(p)==2 or len(p) == 4:
+        ir.emitExit()
     else:
         p[0] = {"expr":[p[1],p[2],p[3],p[4]]}
 

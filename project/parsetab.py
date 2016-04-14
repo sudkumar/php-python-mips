@@ -200,8 +200,8 @@ _lr_productions = [
   ('expr',1,'p_expr_exit','./bin/irgen/parser.py',1063),
   ('expr',3,'p_expr_exit','./bin/irgen/parser.py',1064),
   ('expr',4,'p_expr_exit','./bin/irgen/parser.py',1065),
-  ('expr',2,'p_expr_print','./bin/irgen/parser.py',1074),
-  ('jump_marker',1,'p_jump_marker','./bin/irgen/parser.py',1078),
-  ('goto_marker',1,'p_goto_marker','./bin/irgen/parser.py',1084),
-  ('empty',0,'p_empty','./bin/irgen/parser.py',1092),
+  ('expr',2,'p_expr_print','./bin/irgen/parser.py',1073),
+  ('jump_marker',1,'p_jump_marker','./bin/irgen/parser.py',1077),
+  ('goto_marker',1,'p_goto_marker','./bin/irgen/parser.py',1083),
+  ('empty',0,'p_empty','./bin/irgen/parser.py',1091),
 ]
