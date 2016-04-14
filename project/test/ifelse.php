@@ -13,11 +13,6 @@
     endif;
 
     
-    // if($isLeap == 0){
-    //     echo "No..";
-    // }else{
-	   //      echo "Yes.";
-    // }
     
     $c = $isLeap == 0 ? "No.." : "Yes.";
     echo $c;

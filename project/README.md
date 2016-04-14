@@ -43,10 +43,10 @@
     - error handling for function params count and undefined functions.
     - exit 
     - dead code elimination
-    - print newline support
+    - print support for 4 character string
 
 
-# test
+## test
     Test cases containing php src code.
 
 
@@ -55,17 +55,15 @@
 
 ## Running Test cases
 
-   in project folder run these command to make assembly code which goes in out.s file-
+In project folder run these command to make assembly code which goes in out.s file-
 
-    make clean
-    make
+        ./run.sh test/switch.php
+
+After generating assebmly code, run the spim assembler
+
+        spim
+        load "out.s"
+        run
 
 
     
-## Execute Assembly Code
-
-   run these command in terminal one by one
-
-    $ spim
-    $ load "out.s"
-    $ run

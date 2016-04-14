@@ -1,6 +1,7 @@
 <?php
     $y = 10;
-    exit;    
+    echo $y;
+    exit;
     switch ($y) {
         case 1 :
             $y = 1;
@@ -12,5 +13,6 @@
             $y = 3;
             break;
     }
-    $y = 10;
+    $y = 100;
+    echo $y;
 ?>
