@@ -1,7 +1,3 @@
 #!/bin/bash
 
-make
-spim <<ASM
-load "out.s"
-run
-ASM
+make test=$1 all

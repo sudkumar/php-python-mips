@@ -175,6 +175,7 @@ data= ""
 for line in inputStr:
   data += (line)
   lexer.lineno -= 1
+lexer.lineno += 1
 # input data to lexer
 lexer.input(data)
 symbols = {}

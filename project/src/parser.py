@@ -178,7 +178,7 @@ def p_if_stmt_without_else(p):
             p[0]["falselist"] = p[3]["falselist"]
         else:
             p[0]["falselist"] = ir.makeList()            
-            errors.append("TypeError: in if stmt condition: "+ " expected boolean, '"+ p[3]["type"] + "' given.")
+            errors.append("TypeError: In if-stmt condition: "+ " expected boolean, '"+ p[3]["type"] + "' given.")
                 
         p[0]["nextlist"] = p[6]["nextlist"]
         p[0]["breaklist"] = p[6]["breaklist"]
@@ -189,7 +189,7 @@ def p_if_stmt_without_else(p):
             p[0]["falselist"] = p[6]["falselist"]
         else:
             p[0]["falselist"] = ir.makeList()            
-            errors.append("TypeError: in elseif condition: "+ " expected boolean, '"+ p[6]["type"] + "' given.")      
+            errors.append("TypeError: In elseif-stmt condition: "+ " expected boolean, '"+ p[6]["type"] + "' given.")      
 
         ir.backpatch(p[1]["falselist"], p[5]["quad"])
         p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[9]["nextlist"])
@@ -227,7 +227,7 @@ def p_alt_if_stmt_without_else(p):
             p[0]["falselist"] = p[3]["falselist"]
         else:
             p[0]["falselist"] = ir.makeList()
-            errors.append("TypeError: in if condition: "+ " expected boolean, '"+ p[3]["type"] + "' given.")
+            errors.append("TypeError: In if-stmt condition: "+ " expected boolean, '"+ p[3]["type"] + "' given.")
 
         p[0]["nextlist"] = p[7]["nextlist"]
         p[0]["breaklist"] = p[7]["breaklist"]
@@ -243,7 +243,7 @@ def p_alt_if_stmt_without_else(p):
             p[0]["falselist"] = p[6]["falselist"]
         else:
             p[0]["falselist"] = ir.makeList() 
-            errors.append("TypeError: in elseif condition: "+ " expected boolean, '"+ p[6]["type"] + "' given.")
+            errors.append("TypeError: In elseif-stmt condition: "+ " expected boolean, '"+ p[6]["type"] + "' given.")
 
         ir.backpatch(p[1]["falselist"], p[5]["quad"])
         p[0]["nextlist"] = ir.mergeList(ir.mergeList(p[1]["nextlist"], p[3]["nextlist"]), p[10]["nextlist"])
@@ -291,8 +291,7 @@ def p_stmt_do_while(p):
 def p_stmt_for(p):
     'stmt : FOR LPAREN for_expr SEMICOLON jump_marker for_expr SEMICOLON jump_marker for_expr goto_marker RPAREN jump_marker for_stmt goto_marker'
     p[0] = {}
-    global ir
-
+    global ir 
     if(p[3]["type"]=="stmt" and p[6]["type"]=="bool"):        
         # set the true list of for_expr_2 to go to for_stmt
         ir.backpatch(p[6]["truelist"], p[12]["quad"])
@@ -322,8 +321,10 @@ def p_non_empty_for_expr(p):
                           | expr'''
     global ir
     p[0] = {}
-    if(len(p)==2):
+    if(len(p)==2): 
         # it may be a conditional expr, so pass it on
+        p[0] = p[1]
+    else:
         p[0] = p[1]
 def p_for_stmt(p):
     '''for_stmt : stmt
@@ -865,7 +866,7 @@ def p_expr_arith(p):
     global ir
     name = ir.newTemp()
     if p[1]["type"] != p[3]["type"]:
-        errors.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
+        errors.append("Warning: at line number "+ str(p.lexer.lineno)+ ", type mismatch for operator "+ p[2] + " with operands "+ p[1]["place"] + " and "+ p[3]["place"])
 
     global stm
     p[0] = stm.insert(name, p[1]["type"], p[1]["width"])
