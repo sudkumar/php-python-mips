@@ -1,4 +1,4 @@
-# A Simple Cross compiler for PHP, build with Python
+# Tokenization
 
 ## Dependencies
 
